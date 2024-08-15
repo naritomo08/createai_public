@@ -32,7 +32,7 @@ http://localhost:3100
 画像保管先
 app/output
 
-画像保管ログ
+画像生成ログ
 log_writer/output
 ```
 
