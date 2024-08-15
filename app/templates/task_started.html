@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h2 class="text-center mt-5">タスク開始</h2>
+                <p class="mt-4">タスクが開始されました。以下のタスクIDを使用して後で結果を確認できます:</p>
+                <p><strong>タスクID:</strong> {{ task_id }}</p>
+                <div class="mt-4">
+                    <a href="/" class="btn btn-primary">戻る</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

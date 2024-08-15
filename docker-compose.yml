@@ -1,0 +1,63 @@
+#version: '3.8'
+volumes:
+  cache_volume:
+
+services:
+  createai-app:
+    build: ./app
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./app/output:/app/output
+    restart: always
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - TZ=Asia/Tokyo
+
+  redis:
+    image: redis:latest
+    volumes:
+      - type: volume
+        source: cache_volume
+        target: /data
+        volume:
+          nocopy: true
+    restart: always
+    environment:
+      - TZ=Asia/Tokyo
+
+  celery-worker:
+    build: ./app
+    command: celery -A app.celery worker --loglevel=info
+    volumes:
+      - ./app/output:/app/output
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - TZ=Asia/Tokyo
+    restart: always
+
+  celery-beat:
+    build: ./app
+    command: python start_celery_beat.py
+    volumes:
+      - ./app/output:/app/output
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - TZ=Asia/Tokyo
+    restart: always
+
+  log-writer:
+    build: ./log_writer
+    volumes:
+      - ./log_writer/output:/app/output
+    environment:
+      - TZ=Asia/Tokyo
+    depends_on:
+      - redis

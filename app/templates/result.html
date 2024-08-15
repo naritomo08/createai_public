@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h2 class="text-center mt-5">実行結果(リロードするとトップに戻ります。)</h2>
+                <h3 class="mt-4">ステータス: {{ status }}</h3>
+                <h3 class="mt-4">パラメータ</h3>
+                <pre class="bg-light p-3 border">{{ parameters }}</pre>
+                <h3 class="mt-4">出力</h3>
+                <pre class="bg-light p-3 border">{{ output }}</pre>
+                <h3 class="mt-4">エラー</h3>
+                <pre class="bg-light p-3 border">{{ error }}</pre>
+                <div class="mt-4">
+                    <button class="btn btn-secondary" onclick='reflectToTop({{ parameters|tojson|safe }})'>トップに反映(高解像度化設定は除く)</button>
+                </div>
+                <div class="mt-4">
+                    <a href="/" class="btn btn-primary">戻る</a>
+                </div>
+                {% if start_time == "N/A" %}
+                <div class="mt-3">
+                    <form id="cancelForm" method="post" action="/cancel_task">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="task_id" value="{{ task_id }}">
+                        <button type="submit" onclick="return confirmCancel()" class="btn btn-danger">タスクをキャンセル</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

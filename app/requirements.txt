@@ -1,0 +1,8 @@
+Flask
+pillow
+requests
+redis
+celery
+pytz
+pillow
+flask-wtf

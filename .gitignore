@@ -1,0 +1,5 @@
+output
+__pycache__
+.DS_Store
+aicreate/variable.py
+celerybeat-schedule

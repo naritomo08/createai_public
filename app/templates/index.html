@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <h2 class="text-center mt-5">StableDiffusion画像作成</h2>
+                <form id="myForm" action="/run_program" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        <label for="sd_url">SD 送信先URL sd_url:</label>
+                        <input type="text" id="sd_url" name="sd_url" value="http://<stableDiffusionIPアドレス>:7860" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="promptinput">プロンプト入力 promptinput</label></br>
+                        <button type="button" onclick="clearPromptInput()" class="btn btn-secondary btn-sm">クリア</button>
+                        <button type="button" onclick="copyPromptInput()" class="btn btn-secondary btn-sm">コピー</button>
+                        <textarea id="promptinput" name="promptinput" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="negativeinput">ネガティブプロンプト入力 negativeinput</label></br>
+                        <button type="button" onclick="clearPromptInput2()" class="btn btn-secondary btn-sm">クリア</button>
+                        <button type="button" onclick="copyPromptInput2()" class="btn btn-secondary btn-sm">コピー</button>
+                        <textarea id="negativeinput" name="negativeinput" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="gazousize">画像サイズ gazousize</label>
+                        <select id="gazousize" name="gazousize" class="form-control">
+                            <option value="0" selected>0.全サイズランダム</option>
+                            <option value="1">1.縦長ランダム</option>
+                            <option value="2">2.横長ランダム</option>
+                            <option value="3">3.画像サイズ選択</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="gazouDiv" style="display:none;">
+                        <div class="form-group">
+                            <label for="gazouselect">画像サイズ選択(横 X 縦) gazouselect</label>
+                            <select id="gazouselect" name="gazouselect" class="form-control">
+                                <option value="0">0.640 X 1536</option>
+                                <option value="1">1.1536 X 640</option>
+                                <option value="2" selected>2.768 X 1344</option>
+                                <option value="3">3.1344 X 768</option>
+                                <option value="4">4.832 X 1216</option>
+                                <option value="5">5.1216 X 832</option>
+                                <option value="6">6.896 X 1152</option>
+                                <option value="7">7.1152 X 896</option>
+                                <option value="8">8.1024 X 1024</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group form-check">
+                        <input type="checkbox" id="exconf" class="form-check-input">
+                        <label for="exconf" class="form-check-label">詳細設定</label>
+                    </div>
+                    <div class="form-group" id="exconfDiv" style="display:none;">
+                        <div class="form-group">
+                            <label for="seed">seed値(-1でランダム) seed</label>
+                            <input type="number" id="seed" name="seed" value="-1" min="-1" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="steps">ステップ steps</label>
+                            <input type="number" id="steps" name="steps" value="30" min="1" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cfg">コンフィグ値 cfg</label>
+                            <input type="number" id="cfg" name="cfg" value="7" min="1" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="sampler">サンプラー選択方法 sampler</label>
+                            <select id="sampler" name="sampler" class="form-control">
+                                <option value="0">0.ランダム(15毎)</option>
+                                <option value="1">1.順序(15毎)</option>
+                                <option value="2" selected>2.固定</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="samplerDiv" style="display:none;">
+                            <label for="samplerselect">サンプラー選択 samplerselect</label>
+                            <select id="samplerselect" name="samplerselect" class="form-control">
+                                <option value="0">0.DPM++ 2M</option>
+                                <option value="1">1.DPM++ SDE</option>
+                                <option value="2">2.DPM++ 2M SDE</option>
+                                <option value="3">3.DPM++ 2M SDE Heun</option>
+                                <option value="4">4.DPM++ 2S a</option>
+                                <option value="5">5.DPM++ 3M SDE</option>
+                                <option value="6" selected>6.Euler a</option>
+                                <option value="7">7.Euler</option>
+                                <!--<option value="8">8.LMS</option>-->
+                                <option value="9">9.Heun</option>
+                                <option value="10">10.DPM2</option>
+                                <!--<option value="11">11.DPM2 a</option>
+                                <option value="12">12.DPM fast</option>-->
+                                <option value="13">13.DPM adaptive</option>
+                                <option value="14">14.Restart</option>
+                                <option value="15">15.DDIM</option>
+                                <option value="16">16.PLMS</option>
+                                <option value="17">17.UniPC</option>
+                                <!--<option value="18">18.LCM</option>-->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group form-check">
+                        <input type="checkbox" id="hres" name="hres" class="form-check-input">
+                        <label for="hres" class="form-check-label">高解像度化 hres</label>
+                    </div>
+                    <div class="form-group" id="hresDiv" style="display:none;">
+                        <div class="form-group">
+                            <label for="hres_size">高解像度倍率 hres_size</label>
+                            <input type="number" id="hres_size" name="hres_size" value="1.5" min="1.5" step="0.1" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="hres_steps">高解像度ステップ hres_steps</label>
+                            <input type="number" id="hres_steps" name="hres_steps" value="30" min="1" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="topnameselect">生成トップ名追加 topnameselect</label>
+                        <select id="topnameselect" name="topnameselect" class="form-control">
+                            <option value="0" selected>0.なし</option>
+                            <option value="1">1.あり</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="topnameDiv" style="display:none;">
+                        <label for="topnamein">生成トップ名入力 topnamein</label><br>
+                        <input type="text" id="topnamein" name="topnamein" value="topnamein" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="gazoucreate">作成枚数 gazoucreate</label>
+                        <input type="number" id="gazoucreate" name="gazoucreate" value="1" min="1" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">画像生成</button>
+                </form>
+
+                <div class="mt-5 text-center">
+                    <button class="btn btn-danger" onclick="confirmDeleteTasks()">すべてのタスクを削除(タスク異常時に使用してください。)</button>
+                </div>
+
+                <h2 class="mt-5">処理中のタスク</h2>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover mt-3">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>タスクID</th>
+                                <th>状態</th>
+                                <th>作成日時</th>
+                                <th>開始時間</th>
+                                <th>終了時間</th>
+                            </tr>
+                        </thead>
+                        <tbody id="processingTasksTableBody">
+                            <!-- JavaScriptにより動的に生成される -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <h2 class="mt-5">完了したタスク(24H保管,処理中のタスクがある場合消えません)</h2>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover mt-3">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>タスクID</th>
+                                <th>状態</th>
+                                <th>作成日時</th>
+                                <th>開始時間</th>
+                                <th>終了時間</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completedTasksTableBody">
+                            <!-- JavaScriptにより動的に生成される -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
