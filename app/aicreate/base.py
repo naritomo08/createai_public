@@ -196,11 +196,7 @@ def styleselect2(styleselect) :
 
 vae = "xlVAEC_f1.safetensors"
 
-#トップ系スクリプト(test除く)
-
 script_top="score_9, score_8_up, score_7_up, source_anime, quality_masterpiece, quality_best, official art, best quality, official style, anime_cap, game cg, megami magazine,  ultra delicate hair, very aesthetic, absurdres, shiny skin, "
-
-#スクリプト本体
 
 negapro = "score_5,score_4,jpeg artifacts,source_photo,source_realstic,source_cartoon,source_furry,low_quality,monochrome,bad_anatomy,blurry,bad hands,missing fingers,extra fingers, break, source_pony, source_furry, source_cartoon, mature female, the simpsons, overwatch, apex legends, (black_hair:2), miko, female_pubic_hair, artist name, realistic, 3d, video, source_filmmaker,text,watermark,signature,username,stamp,artist name,title/subtitle,date,footer/header, "
 
