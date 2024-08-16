@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'isyouon': 1,
             'topnameselect': 0,
             'topnamein': '',
-            'timeout': 300,
+            'timeout': 300
         };
 
         // 各フィールドに対して値を設定
