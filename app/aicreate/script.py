@@ -15,7 +15,7 @@ def Main(i,topname):
 	}
 
 	try:
-		response = requests.post(url=f'{url}/sdapi/v1/options', json=option_payload, timeout=30)
+		response = requests.post(url=f'{url}/sdapi/v1/options', json=option_payload, timeout=120)
 		response.raise_for_status()  # ここでエラーがあれば例外が発生します
 	except requests.RequestException as e:
 		print(f"Error during POST to /sdapi/v1/options: {e}")
