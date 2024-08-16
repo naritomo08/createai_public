@@ -15,7 +15,7 @@ def Main(i,topname):
 	}
 
 	try:
-		response = requests.post(url=f'{url}/sdapi/v1/options', json=option_payload, timeout=10)
+		response = requests.post(url=f'{url}/sdapi/v1/options', json=option_payload, timeout=30)
 		response.raise_for_status()  # ここでエラーがあれば例外が発生します
 	except requests.RequestException as e:
 		print(f"Error during POST to /sdapi/v1/options: {e}")
@@ -46,7 +46,7 @@ def Main(i,topname):
 	}
 
 	try:
-		resp = requests.post(url=f'{url}/sdapi/v1/txt2img', json=Imgsetting, timeout=10)
+		resp = requests.post(url=f'{url}/sdapi/v1/txt2img', json=Imgsetting, timeout=300)
 		resp.raise_for_status()  # ここでエラーがあれば例外が発生します
 		json_data = resp.json()
 		imgdata = json_data["images"][0]
