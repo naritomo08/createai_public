@@ -233,6 +233,10 @@ def run_program_async(task_id, gazoucreate, sd_url, gazousize, promptinput, hres
         output = output.decode().strip() if output else ""
         error = error.decode().strip() if error else ""
 
+        # プロセスの終了コードを確認し、エラーの場合は例外を発生させる
+        if process.returncode != 0 or error:
+            raise Exception(f"Script failed with error: {error}")
+
         redis_client.setex(f"task_result:{task_id}:output", RESULT_EXPIRATION_TIME, output)
         redis_client.setex(f"task_result:{task_id}:error", RESULT_EXPIRATION_TIME, error)
         end_time = datetime.now().timestamp()

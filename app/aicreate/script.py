@@ -14,7 +14,12 @@ def Main(i,topname):
 		#"CLIP_stop_at_last_layers": 2
 	}
 
-	requests.post(url=f'{url}/sdapi/v1/options', json=option_payload)
+	try:
+		response = requests.post(url=f'{url}/sdapi/v1/options', json=option_payload)
+		response.raise_for_status()  # ここでエラーがあれば例外が発生します
+	except requests.RequestException as e:
+		print(f"Error during POST to /sdapi/v1/options: {e}")
+		raise
 
 	# Create Picture
 	Imgsetting = {
@@ -39,9 +44,15 @@ def Main(i,topname):
 	"hr_upscaler" :"R-ESRGAN 4x+ Anime6B",
 	"denoising_strength" :0.7,
 	}
-	resp = requests.post(url=f'{url}/sdapi/v1/txt2img', json=Imgsetting)
-	json = resp.json()
-	imgdata = json["images"][0]
+
+	try:
+		resp = requests.post(url=f'{url}/sdapi/v1/txt2img', json=Imgsetting)
+		resp.raise_for_status()  # ここでエラーがあれば例外が発生します
+		json_data = resp.json()
+		imgdata = json_data["images"][0]
+	except requests.RequestException as e:
+		print(f"Error during POST to /sdapi/v1/txt2img: {e}")
+		raise
 
 	now = datetime.datetime.now()
 	current_day = now.strftime("%Y-%m-%d")
@@ -72,41 +83,47 @@ if __name__ == '__main__':
 	#計測開始
 	start = time.perf_counter()
 
-	# 繰り返し処理
-	while i < n:
+	try:
 
-		width,height = g.sizechange(gazouchange,gazousize)
+		# 繰り返し処理
+		while i < n:
 
-		if (i < n):
-			gazou = n - i
-			print("画像はあと{}枚です。".format(gazou))
+			width,height = g.sizechange(gazouchange,gazousize)
 
-		#プロンプト変数取得
+			if (i < n):
+				gazou = n - i
+				print("画像はあと{}枚です。".format(gazou))
 
-		color = c.colorselect(i)
+			#プロンプト変数取得
 
-		girl,isyouout,chara = c.prompt(color)
+			color = c.colorselect(i)
 
-		script,negaproex = g.scriptselect(v.promptselect,v.promptinput)
+			girl,isyouout,chara = c.prompt(color)
 
-		styleselect = g.styleselect(i,v.styleselect,v.styleselect2)
-		style = g.styleselect2(styleselect)
+			script,negaproex = g.scriptselect(v.promptselect,v.promptinput)
 
-		promptselect = girl + " BREAK " + isyouout +  " BREAK " + style + " BREAK " + script + " BREAK " + v.promptinput2
-		negapro = g.negapro + " BREAK " + negaproex + " BREAK " + v.negativeinput
+			styleselect = g.styleselect(i,v.styleselect,v.styleselect2)
+			style = g.styleselect2(styleselect)
 
-		checkmodel = g.modelselect(i,v.modelchange,v.modelselect)
-		model,modelname = g.modelselect2(checkmodel)
+			promptselect = girl + " BREAK " + isyouout +  " BREAK " + style + " BREAK " + script + " BREAK " + v.promptinput2
+			negapro = g.negapro + " BREAK " + negaproex + " BREAK " + v.negativeinput
 
-		samplernum = g.selectsampler(i,v.sampler,v.samplerselect)
-		sampler = g.selectsampler2(samplernum)
+			checkmodel = g.modelselect(i,v.modelchange,v.modelselect)
+			model,modelname = g.modelselect2(checkmodel)
 
-		topname = g.topname(v.topnameselect,v.topnamein)
+			samplernum = g.selectsampler(i,v.sampler,v.samplerselect)
+			sampler = g.selectsampler2(samplernum)
 
-		Main(i,topname)
-		time.sleep(1)
+			topname = g.topname(v.topnameselect,v.topnamein)
 
-		i = i + 1
+			Main(i, topname)
+			time.sleep(1)
+
+			i += 1
+
+	except Exception as e:
+		print(f"An error occurred: {e}")
+		exit(1)  # スクリプトをエラーコード1で終了します
 
 	#計測終了
 	end = time.perf_counter()

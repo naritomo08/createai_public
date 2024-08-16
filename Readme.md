@@ -36,7 +36,7 @@ app/output
 log_writer/output
 ```
 
-## ソース編集時の注意
+### ソース編集時の注意
 
 ソース編集のみでは反映されないため、必ず以下のコマンドを入れること。
 
@@ -45,3 +45,17 @@ docker-compose down
 docker-compose build
 docker-compose up -d
 ```
+
+### タスクを止める方法
+
+状態がProicessing状態でしたらタスク詳細画面から停止することが可能ですが、
+Running状態で止める際は以下どちらかの方法で停止してください
+
+* サイトトップ画面からすべてのタスクを消して、コンテナの停止・起動を行う
+
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+* 画像生成PC側のアプリプロンプト画面を落とす
