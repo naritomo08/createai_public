@@ -1,4 +1,4 @@
-import requests,datetime,os,time
+import requests,datetime,os,time,sys,traceback
 import base as g
 import variable as v
 import chara as c
@@ -122,8 +122,9 @@ if __name__ == '__main__':
 			i += 1
 
 	except Exception as e:
-		print(f"An error occurred: {e}")
-		exit(1)  # スクリプトをエラーコード1で終了します
+		print(f"An error occurred in script.py: {e}", file=sys.stderr)
+		traceback.print_exc(file=sys.stderr)  # スタックトレースを標準エラー出力に表示
+		sys.exit(1)
 
 	#計測終了
 	end = time.perf_counter()
