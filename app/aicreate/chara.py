@@ -1,6 +1,5 @@
 import variable as v
 import base as g
-import random;
 
 #color,キャラ ランダム選択 prompt()で利用,0でランダム、1で順序、2で固定
 def colorselect(i) :
@@ -17,7 +16,7 @@ def prompt(color):
 	if color == 100 :
 		girl = g.script_top + " BREAK "
 		isyou = ""
-		chara = "none"
+		chara = "createai"
 
 	if (v.isyouon == 0):
 		isyouout = isyou

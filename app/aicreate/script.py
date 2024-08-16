@@ -46,7 +46,7 @@ def Main(i,topname):
 	}
 
 	try:
-		resp = requests.post(url=f'{url}/sdapi/v1/txt2img', json=Imgsetting, timeout=300)
+		resp = requests.post(url=f'{url}/sdapi/v1/txt2img', json=Imgsetting, timeout=v.timeout)
 		resp.raise_for_status()  # ここでエラーがあれば例外が発生します
 		json_data = resp.json()
 		imgdata = json_data["images"][0]

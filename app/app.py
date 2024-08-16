@@ -140,8 +140,9 @@ def run_program():
         hres_steps = int(request.form['hres_steps'])
         topnameselect = int(request.form['topnameselect'])
         topnamein = request.form['topnamein']
+        timeout = int(request.form['timeout'])
 
-        log_to_redis(f"Parsed form data: gazoucreate={gazoucreate}, sd_url={sd_url}, gazousize={gazousize}, promptinput={promptinput}, hres={str(hres)}, hres_size={hres_size}, seed={seed}, gazouselect={gazouselect}, negativeinput={negativeinput}, sampler={sampler}, samplerselect={samplerselect}, steps={steps}, cfg={cfg}, hres_steps={hres_steps}, topnameselect={topnameselect}, topnaein={topnamein}")
+        log_to_redis(f"Parsed form data: gazoucreate={gazoucreate}, sd_url={sd_url}, gazousize={gazousize}, promptinput={promptinput}, hres={str(hres)}, hres_size={hres_size}, seed={seed}, gazouselect={gazouselect}, negativeinput={negativeinput}, sampler={sampler}, samplerselect={samplerselect}, steps={steps}, cfg={cfg}, hres_steps={hres_steps}, topnameselect={topnameselect}, topnamein={topnamein}, timeout={timeout}")
 
         # タスクのパラメータと作成時刻を保存
         redis_client.hset(f"task_params:{task_id}", mapping={
@@ -160,12 +161,13 @@ def run_program():
             'cfg': cfg,
             'hres_steps': hres_steps,
             'topnameselect': topnameselect,
-            'topnamein': topnamein
+            'topnamein': topnamein,
+            'timeout': timeout,
         })
         redis_client.set(f"task_created_at:{task_id}", time.time())
 
         # 非同期タスクのキューに追加
-        run_program_async.apply_async(args=[task_id, gazoucreate, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, negativeinput, sampler, samplerselect, steps, cfg, hres_steps, topnameselect, topnamein])
+        run_program_async.apply_async(args=[task_id, gazoucreate, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, negativeinput, sampler, samplerselect, steps, cfg, hres_steps, topnameselect, topnamein, timeout])
 
         # 処理中タスクIDリストに追加
         redis_client.sadd('processing_tasks', task_id)
@@ -189,7 +191,7 @@ def task_started_page():
     return render_template('task_started.html', task_id=task_id)
 
 @celery.task
-def run_program_async(task_id, gazoucreate, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, negativeinput, sampler, samplerselect, steps, cfg, hres_steps, topnameselect, topnamein):
+def run_program_async(task_id, gazoucreate, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, negativeinput, sampler, samplerselect, steps, cfg, hres_steps, topnameselect, topnamein, timeout):
     try:
         start_time = datetime.now().timestamp()
         redis_client.set(f"task_start_time:{task_id}", start_time)
@@ -214,6 +216,7 @@ def run_program_async(task_id, gazoucreate, sd_url, gazousize, promptinput, hres
         base_content = update_variable(base_content, 'hres_steps', hres_steps)
         base_content = update_variable(base_content, 'topnameselect', topnameselect)
         base_content = update_variable(base_content, 'topnamein', topnamein)
+        base_content = update_variable(base_content, 'timeout', timeout)
 
         with open('aicreate/variable.py', 'w') as file:
             file.write(base_content)

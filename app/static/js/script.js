@@ -22,7 +22,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'cfg': 7,
             'isyouon': 1,
             'topnameselect': 0,
-            'topnamein': ''
+            'topnamein': '',
+            'timeout': 300,
         };
 
         // 各フィールドに対して値を設定
