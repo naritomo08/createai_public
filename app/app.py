@@ -162,7 +162,7 @@ def run_program():
             'hres_steps': hres_steps,
             'topnameselect': topnameselect,
             'topnamein': topnamein,
-            'timeout': timeout,
+            'timeout': timeout
         })
         redis_client.set(f"task_created_at:{task_id}", time.time())
 
