@@ -12,13 +12,13 @@ def colorselect(i) :
 
 def prompt(color):
 
-	#PromptSelect
-	if color == 100 :
-		girl = g.script_top + " BREAK "
-		isyou = ""
-		chara = "createai"
+    #PromptSelect
+    if color == 100 :
+        girl = g.script_top + " BREAK "
+        isyou = ""
+        chara = "createai"
 
-	if (v.isyouon == 0):
-		isyouout = isyou
+    if (v.isyouon == 0):
+        isyouout = isyou
 
-	return girl,isyouout,chara
+    return girl,isyouout,chara

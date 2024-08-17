@@ -10,19 +10,19 @@ def topname(topnameselect,topnamein) :
     return topname
 
 def save_image_as_png_and_jpg(topname,i,imgdata, dir_for_output_png, dir_for_output_jpg, chara, modelname, current_daytime):
-	# base64デコードされた画像データをバイナリデータとして取得
-	imgdata = base64.b64decode(imgdata)
+    # base64デコードされた画像データをバイナリデータとして取得
+    imgdata = base64.b64decode(imgdata)
 
-	# バイナリデータをバイトストリームとして読み込む
-	img = Image.open(io.BytesIO(imgdata))
+    # バイナリデータをバイトストリームとして読み込む
+    img = Image.open(io.BytesIO(imgdata))
 
-	# JPG形式に変換して保存
-	jpg_output_path = f"{dir_for_output_jpg}/{topname}{i}-{chara}-{modelname}-{current_daytime}.jpg"
-	img.convert('RGB').save(jpg_output_path, "JPEG")
+    # JPG形式に変換して保存
+    jpg_output_path = f"{dir_for_output_jpg}/{topname}{i}-{chara}-{modelname}-{current_daytime}.jpg"
+    img.convert('RGB').save(jpg_output_path, "JPEG")
 
-	# PNG形式で保存
-	with open(f"{dir_for_output_png}/{topname}{i}-{chara}-{modelname}-{current_daytime}.png", "wb") as f:
-		f.write(imgdata)
+    # PNG形式で保存
+    with open(f"{dir_for_output_png}/{topname}{i}-{chara}-{modelname}-{current_daytime}.png", "wb") as f:
+        f.write(imgdata)
 
 def set_permissions_recursive(dir_path, permissions):
     for root, dirs, files in os.walk(dir_path):
