@@ -120,10 +120,6 @@ def get_tasks():
         log_to_redis(f"An error occurred in get_tasks route: {e}")
         return jsonify({'error': 'An error occurred'}), 500
 
-def format_question(question):
-    formatted = question.replace("\n", "<br>")
-    return formatted
-
 def ask_chatgpt(prompt):
     try:
         # ChatGPTにプロンプトを送り、改良されたプロンプトを得る
