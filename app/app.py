@@ -171,7 +171,7 @@ def run_program():
             'gazoucreate': gazoucreate,
             'sd_url': sd_url,
             'gazousize': gazousize,
-            'promptinput': promptinput,
+            'promptinput': input,
             'hres': str(hres),
             'hres_size': hres_size,
             'seed': seed,
