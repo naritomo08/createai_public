@@ -10,6 +10,7 @@ import pytz
 import json
 from flask_wtf.csrf import CSRFProtect
 import os
+import openai
 
 app = Flask(__name__)
 
@@ -119,6 +120,28 @@ def get_tasks():
         log_to_redis(f"An error occurred in get_tasks route: {e}")
         return jsonify({'error': 'An error occurred'}), 500
 
+def format_question(question):
+    formatted = question.replace("\n", "<br>")
+    return formatted
+
+def ask_chatgpt(prompt):
+    try:
+        # ChatGPTにプロンプトを送り、改良されたプロンプトを得る
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a high-performance chatbot. Follow the rules below:\n\nRules:\n- Refine the illustration prompt to make it better.\n- Use the format '(element: weight), (element: weight), ...'.\n- Based on the current prompt, determine the situation more specifically.\n- Add, change, or remove elements as needed to fit the situation.\n- Adjust the number of elements to around 15.\n- Use English or Danbooru tags for elements.\n- Keep the number of words in each element to within 4.\n- Split elements if they are too long or unclear.\n- Move important elements to the front and less important phrases to the back.\n- Adjust the weight of elements between 0.5 and 1.3 to emphasize key aspects."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+
+        # 改良されたプロンプトを取得
+        refined_prompt = response.choices[0].message['content']
+        return refined_prompt
+
+    except Exception as e:
+        return "An error occurred while communicating with the AI."
+
 @app.route('/run_program', methods=['POST'])
 def run_program():
     try:
@@ -127,12 +150,10 @@ def run_program():
         gazoucreate = int(request.form['gazoucreate'])
         sd_url = request.form['sd_url']
         gazousize = int(request.form['gazousize'])
-        promptinput = request.form['promptinput'].replace('\n', '').replace('\r', '')
         hres = 'hres' in request.form
         hres_size = float(request.form['hres_size'])
         seed = int(request.form['seed'])
         gazouselect = int(request.form['gazouselect'])
-        negativeinput = request.form['negativeinput'].replace('\n', '').replace('\r', '')
         sampler = int(request.form['sampler'])
         samplerselect = int(request.form['samplerselect'])
         steps = int(request.form['steps'])
@@ -141,8 +162,13 @@ def run_program():
         topnameselect = int(request.form['topnameselect'])
         topnamein = request.form['topnamein']
         timeout = int(request.form['timeout'])
+        
+        #入力文の変換
+        input = request.form["promptinput"]
+        input_trans = ask_chatgpt(input)
+        promptinput = input_trans.replace('\n', ',').replace('\r', ',')
 
-        log_to_redis(f"Parsed form data: gazoucreate={gazoucreate}, sd_url={sd_url}, gazousize={gazousize}, promptinput={promptinput}, hres={str(hres)}, hres_size={hres_size}, seed={seed}, gazouselect={gazouselect}, negativeinput={negativeinput}, sampler={sampler}, samplerselect={samplerselect}, steps={steps}, cfg={cfg}, hres_steps={hres_steps}, topnameselect={topnameselect}, topnamein={topnamein}, timeout={timeout}")
+        log_to_redis(f"Parsed form data: gazoucreate={gazoucreate}, sd_url={sd_url}, gazousize={gazousize}, promptinput={promptinput}, hres={str(hres)}, hres_size={hres_size}, seed={seed}, gazouselect={gazouselect}, sampler={sampler}, samplerselect={samplerselect}, steps={steps}, cfg={cfg}, hres_steps={hres_steps}, topnameselect={topnameselect}, topnamein={topnamein}, timeout={timeout}")
 
         # タスクのパラメータと作成時刻を保存
         redis_client.hset(f"task_params:{task_id}", mapping={
@@ -154,7 +180,6 @@ def run_program():
             'hres_size': hres_size,
             'seed': seed,
             'gazouselect': gazouselect,
-            'negativeinput': negativeinput,
             'sampler': sampler,
             'samplerselect': samplerselect,
             'steps': steps,
@@ -167,7 +192,7 @@ def run_program():
         redis_client.set(f"task_created_at:{task_id}", time.time())
 
         # 非同期タスクのキューに追加
-        run_program_async.apply_async(args=[task_id, gazoucreate, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, negativeinput, sampler, samplerselect, steps, cfg, hres_steps, topnameselect, topnamein, timeout])
+        run_program_async.apply_async(args=[task_id, gazoucreate, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, sampler, samplerselect, steps, cfg, hres_steps, topnameselect, topnamein, timeout])
 
         # 処理中タスクIDリストに追加
         redis_client.sadd('processing_tasks', task_id)
@@ -191,7 +216,7 @@ def task_started_page():
     return render_template('task_started.html', task_id=task_id)
 
 @celery.task
-def run_program_async(task_id, gazoucreate, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, negativeinput, sampler, samplerselect, steps, cfg, hres_steps, topnameselect, topnamein, timeout):
+def run_program_async(task_id, gazoucreate, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, sampler, samplerselect, steps, cfg, hres_steps, topnameselect, topnamein, timeout):
     try:
         start_time = datetime.now().timestamp()
         redis_client.set(f"task_start_time:{task_id}", start_time)
@@ -208,7 +233,6 @@ def run_program_async(task_id, gazoucreate, sd_url, gazousize, promptinput, hres
         base_content = update_variable(base_content, 'hres_size', hres_size)
         base_content = update_variable(base_content, 'seed', seed)
         base_content = update_variable(base_content, 'gazouselect', gazouselect)
-        base_content = update_variable(base_content, 'negativeinput', negativeinput)
         base_content = update_variable(base_content, 'sampler', sampler)
         base_content = update_variable(base_content, 'samplerselect', samplerselect)
         base_content = update_variable(base_content, 'steps', steps)
