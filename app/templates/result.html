@@ -18,15 +18,13 @@
                 <div class="mt-4">
                     <a href="/" class="btn btn-primary">戻る</a>
                 </div>
-                {% if start_time == "N/A" %}
                 <div class="mt-3">
                     <form id="cancelForm" method="post" action="/cancel_task">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="task_id" value="{{ task_id }}">
-                        <button type="submit" onclick="return confirmCancel()" class="btn btn-danger">タスクをキャンセル</button>
+                        <button type="submit" onclick="return confirmCancel()" class="btn btn-danger">タスクを削除</button>
                     </form>
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
