@@ -22,7 +22,7 @@
                     <form id="cancelForm" method="post" action="/cancel_task">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="task_id" value="{{ task_id }}">
-                        <button type="submit" onclick="return confirmCancel()" class="btn btn-danger">タスクをキャンセル</button>
+                        <button type="submit" onclick="return confirmCancel()" class="btn btn-danger">タスクを削除</button>
                     </form>
                 </div>
             </div>
