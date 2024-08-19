@@ -462,6 +462,11 @@ def health_check():
 @app.route('/delete_all_tasks', methods=['POST'])
 def delete_all_tasks():
     try:
+        # 実行中のタスクを取得し、キャンセルリストに追加
+        processing_tasks = redis_client.smembers('processing_tasks')
+        for task_id in processing_tasks:
+            redis_client.sadd('cancelled_tasks', task_id)
+
         # Redisからすべてのタスク関連データを削除
         redis_client.delete('processing_tasks')
         redis_client.delete('completed_tasks')
