@@ -56,6 +56,9 @@ docker-compose up -d
 
 サイトに日本語指示を出して画像生成できるアプリも作成しました。
 
+このサイトでは1回の処理で1枚しか作成できませんが、
+タスク結果画面から画像入手できます。
+
 ### 事前作業(Japanese対応版)
 
 StableDiffuionを立ち上げたPCを用意し、APIを有効にしていること。
@@ -91,7 +94,8 @@ docker-compose up -d
 http://localhost:3100
 
 画像保管先
-app/output
+app/static/output
+または結果画面からモーダル画像閲覧、入手可能
 
 画像生成ログ
 log_writer/output
