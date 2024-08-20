@@ -363,15 +363,6 @@ def task_result():
         end_time = redis_client.get(f"task_end_time:{task_id}")
         status = redis_client.hget(f"task_params:{task_id}", "status")
 
-        # end_timeが存在する場合、日付を取得
-        if end_time:
-            end_time_float = float(end_time.decode('utf-8'))  # Redisから取得したend_timeをfloatに変換
-            end_datetime = datetime.fromtimestamp(end_time_float)  # UNIXタイムスタンプからdatetimeに変換
-            current_day = end_datetime.strftime("%Y-%m-%d")  # "YYYY-MM-DD"形式で日付を取得
-        else:
-            # end_timeがない場合のデフォルト処理 (例: 現在の日付を使用する)
-            current_day = datetime.now().strftime("%Y-%m-%d")
-
         # Redisから画像ファイルパスのリストを取得
         image_filepaths = redis_client.lrange(f"task_result:{task_id}:image_filepaths", 0, -1)
 
@@ -384,9 +375,9 @@ def task_result():
             filepath = filepath.decode('utf-8')
             filename = os.path.basename(filepath)
             if filepath.endswith('.png'):
-                png_urls.append(url_for('static', filename=f'output/{current_day}/png/{filename}'))
+                png_urls.append(url_for('static', filename=f'output/png/{filename}'))
             elif filepath.endswith('.jpg'):
-                jpg_urls.append(url_for('static', filename=f'output/{current_day}/jpg/{filename}'))
+                jpg_urls.append(url_for('static', filename=f'output/jpg/{filename}'))
 
         parameters = redis_client.hgetall(f"task_params:{task_id}")
 
@@ -395,8 +386,10 @@ def task_result():
         else:
             start_time = "N/A"
 
-        # end_timeはすでにfloatとして処理されているため、ここではそのまま文字列に変換して使用
-        end_time_str = datetime.fromtimestamp(end_time_float).strftime('%Y-%m-%d %H:%M:%S') if end_time else "N/A"
+        if end_time:
+            end_time = end_time.decode('utf-8')
+        else:
+            end_time = "N/A"
 
         decoded_parameters = {k.decode('utf-8'): v.decode('utf-8') for k, v in parameters.items()}
 
@@ -405,7 +398,7 @@ def task_result():
                 'output': "",
                 'error': "Task ID not found or results expired",
                 'start_time': start_time,
-                'end_time': end_time_str,
+                'end_time': end_time,
                 'task_id': task_id,
                 'status': "unknown",
                 'parameters': decoded_parameters,
@@ -423,7 +416,7 @@ def task_result():
             'output': output.decode('utf-8') if output else "",
             'error': error.decode('utf-8') if error else "",
             'start_time': start_time,
-            'end_time': end_time_str,
+            'end_time': end_time,
             'task_id': task_id,
             'status': status,
             'parameters': decoded_parameters,
