@@ -25,6 +25,7 @@ VAEは"XL_VAE_C(f1)"を入れてください。
 ```bash
 git clone https://github.com/naritomo08/createai_public.git
 cd createapi_public
+rm -rf .git
 docker-compose up -d
 以下のURLでサイトアクセス
 http://localhost:3100
