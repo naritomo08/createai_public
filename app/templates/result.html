@@ -50,7 +50,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="pngCarousel" class="carousel slide" data-bs-interval="false">
+                    <div id="pngCarousel" class="carousel slide" data-bs-ride="carousel">
                         <div class="carousel-inner">
                             {% for image_url in png_urls %}
                                 <div class="carousel-item {% if loop.first %}active{% endif %}">
@@ -69,7 +69,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="toggleSlideBtn" class="btn btn-secondary">スライドを有効化</button>
+                    <button id="togglePngSlideBtn" class="btn btn-secondary">スライドを有効化</button>
                 </div>
             </div>
         </div>
@@ -84,7 +84,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="pngCarousel" class="carousel slide" data-bs-interval="false">
+                    <div id="jpgCarousel" class="carousel slide" data-bs-ride="carousel">
                         <div class="carousel-inner">
                             {% for image_url in jpg_urls %}
                                 <div class="carousel-item {% if loop.first %}active{% endif %}">
@@ -103,7 +103,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="toggleSlideBtn" class="btn btn-secondary">スライドを有効化</button>
+                    <button id="toggleJpgSlideBtn" class="btn btn-secondary">スライドを有効化</button>
                 </div>
             </div>
         </div>
@@ -112,21 +112,48 @@
 
 {% block scripts %}
 <script>
-    var carousel = document.getElementById('pngCarousel');
-    var toggleSlideBtn = document.getElementById('toggleSlideBtn');
-    var isSliding = false;
+    // PNGモーダルのスライド制御
+    var pngCarousel = document.getElementById('pngCarousel');
+    var pngCarouselInstance = new bootstrap.Carousel(pngCarousel, {
+        interval: 2000,  // 自動スライドのインターバルを2秒に設定
+    });
+    var togglePngSlideBtn = document.getElementById('togglePngSlideBtn');
+    var isPngSliding = true;  // 自動スライドを最初から有効にする
 
-    toggleSlideBtn.addEventListener('click', function () {
-        if (isSliding) {
-            // スライドを無効化
-            $(carousel).carousel('pause');
-            toggleSlideBtn.textContent = 'スライドを有効化';
+    // 初期テキストを設定
+    togglePngSlideBtn.textContent = 'スライドを無効化';
+
+    togglePngSlideBtn.addEventListener('click', function () {
+        if (isPngSliding) {
+            pngCarouselInstance.pause();
+            togglePngSlideBtn.textContent = 'スライドを有効化';
         } else {
-            // スライドを有効化
-            $(carousel).carousel('cycle');
-            toggleSlideBtn.textContent = 'スライドを無効化';
+            pngCarouselInstance.cycle();
+            togglePngSlideBtn.textContent = 'スライドを無効化';
         }
-        isSliding = !isSliding;
+        isPngSliding = !isPngSliding;
+    });
+
+    // JPGモーダルのスライド制御
+    var jpgCarousel = document.getElementById('jpgCarousel');
+    var jpgCarouselInstance = new bootstrap.Carousel(jpgCarousel, {
+        interval: 2000,  // 自動スライドのインターバルを2秒に設定
+    });
+    var toggleJpgSlideBtn = document.getElementById('toggleJpgSlideBtn');
+    var isJpgSliding = true;  // 自動スライドを最初から有効にする
+
+    // 初期テキストを設定
+    toggleJpgSlideBtn.textContent = 'スライドを無効化';
+
+    toggleJpgSlideBtn.addEventListener('click', function () {
+        if (isJpgSliding) {
+            jpgCarouselInstance.pause();
+            toggleJpgSlideBtn.textContent = 'スライドを有効化';
+        } else {
+            jpgCarouselInstance.cycle();
+            toggleJpgSlideBtn.textContent = 'スライドを無効化';
+        }
+        isJpgSliding = !isJpgSliding;
     });
 </script>
 {% endblock %}
