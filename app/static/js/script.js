@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'samplerselect': 7,
             'steps': 30,
             'cfg': 7,
-            'isyouon': 1,
+            'gazoucreate': 1,
             'timeout': 300
         };
 

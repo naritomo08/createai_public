@@ -147,6 +147,7 @@ def run_program():
     try:
         log_to_redis(f"Received form data: {request.form}")
         task_id = str(uuid.uuid4())
+        gazoucreate = int(request.form['gazoucreate'])
         sd_url = request.form['sd_url']
         gazousize = int(request.form['gazousize'])
         hres = 'hres' in request.form
@@ -165,10 +166,11 @@ def run_program():
         input_trans = ask_chatgpt(input)
         promptinput = input_trans.replace('\n', ',').replace('\r', ',')
 
-        log_to_redis(f"Parsed form data: sd_url={sd_url}, gazousize={gazousize}, promptinput={promptinput}, hres={str(hres)}, hres_size={hres_size}, seed={seed}, gazouselect={gazouselect}, sampler={sampler}, samplerselect={samplerselect}, steps={steps}, cfg={cfg}, hres_steps={hres_steps}, timeout={timeout}")
+        log_to_redis(f"Parsed form data: gazoucreate={gazoucreate}, sd_url={sd_url}, gazousize={gazousize}, promptinput={promptinput}, hres={str(hres)}, hres_size={hres_size}, seed={seed}, gazouselect={gazouselect}, sampler={sampler}, samplerselect={samplerselect}, steps={steps}, cfg={cfg}, hres_steps={hres_steps}, timeout={timeout}")
 
         # タスクのパラメータと作成時刻を保存
         redis_client.hset(f"task_params:{task_id}", mapping={
+            'gazoucreate': gazoucreate,
             'sd_url': sd_url,
             'gazousize': gazousize,
             'promptinput': input,
@@ -186,7 +188,7 @@ def run_program():
         redis_client.set(f"task_created_at:{task_id}", time.time())
 
         # 非同期タスクのキューに追加
-        run_program_async.apply_async(args=[task_id, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, sampler, samplerselect, steps, cfg, hres_steps, timeout])
+        run_program_async.apply_async(args=[task_id, gazoucreate, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, sampler, samplerselect, steps, cfg, hres_steps, timeout])
 
         # 処理中タスクIDリストに追加
         redis_client.sadd('processing_tasks', task_id)
@@ -210,7 +212,7 @@ def task_started_page():
     return render_template('task_started.html', task_id=task_id)
 
 @celery.task
-def run_program_async(task_id, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, sampler, samplerselect, steps, cfg, hres_steps, timeout):
+def run_program_async(task_id, gazoucreate, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, sampler, samplerselect, steps, cfg, hres_steps, timeout):
     try:
         start_time = datetime.now().timestamp()
         redis_client.set(f"task_start_time:{task_id}", start_time)
@@ -219,6 +221,7 @@ def run_program_async(task_id, sd_url, gazousize, promptinput, hres, hres_size, 
         with open('aicreate/variable.py', 'r') as file:
             base_content = file.read()
 
+        base_content = update_variable(base_content, 'gazoucreate', gazoucreate)
         base_content = update_variable(base_content, 'sd_url', sd_url)
         base_content = update_variable(base_content, 'gazousize', gazousize)
         base_content = update_variable(base_content, 'promptinput', promptinput)
