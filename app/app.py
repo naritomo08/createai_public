@@ -217,6 +217,7 @@ def run_program_async(task_id, gazoucreate, sd_url, gazousize, promptinput, hres
         base_content = update_variable(base_content, 'topnameselect', topnameselect)
         base_content = update_variable(base_content, 'topnamein', topnamein)
         base_content = update_variable(base_content, 'timeout', timeout)
+        base_content = update_variable(base_content, 'task_id', task_id)
 
         with open('aicreate/variable.py', 'w') as file:
             file.write(base_content)
@@ -270,12 +271,14 @@ def delete_expired_tasks():
         completed_tasks = redis_client.smembers('completed_tasks')
         current_time = time.time()
 
+        # タスクごとに終了時間を設定する処理
         for task_id in completed_tasks:
             task_id = task_id.decode('utf-8')
             task_end_time = redis_client.get(f"task_end_time:{task_id}")
             if not task_end_time:
                 set_end_time_for_task(task_id)
 
+        # タスクの削除処理
         for task_id in completed_tasks:
             try:
                 task_id = task_id.decode('utf-8')
@@ -291,8 +294,19 @@ def delete_expired_tasks():
                     task_end_time = float(task_end_time.decode('utf-8'))
 
                     if current_time - task_end_time > RESULT_EXPIRATION_TIME:
+                        # 画像ファイルパスのリストをRedisから取得
+                        image_filepaths = redis_client.lrange(f"task_result:{task_id}:image_filepaths", 0, -1)
+
+                        # すべての画像ファイルを削除
+                        for filepath in image_filepaths:
+                            filepath = filepath.decode('utf-8')
+                            if os.path.exists(filepath):
+                                os.remove(filepath)
+
+                        # タスク関連のRedisキーを削除
                         redis_client.delete(f"task_result:{task_id}:output")
                         redis_client.delete(f"task_result:{task_id}:error")
+                        redis_client.delete(f"task_result:{task_id}:image_filepaths")
                         redis_client.delete(f"task_created_at:{task_id}")
                         redis_client.delete(f"task_start_time:{task_id}")
                         redis_client.delete(f"task_end_time:{task_id}")
@@ -331,6 +345,31 @@ def task_result():
         end_time = redis_client.get(f"task_end_time:{task_id}")
         status = redis_client.hget(f"task_params:{task_id}", "status")
 
+        # end_timeが存在する場合、日付を取得
+        if end_time:
+            end_time_float = float(end_time.decode('utf-8'))  # Redisから取得したend_timeをfloatに変換
+            end_datetime = datetime.fromtimestamp(end_time_float)  # UNIXタイムスタンプからdatetimeに変換
+            current_day = end_datetime.strftime("%Y-%m-%d")  # "YYYY-MM-DD"形式で日付を取得
+        else:
+            # end_timeがない場合のデフォルト処理 (例: 現在の日付を使用する)
+            current_day = datetime.now().strftime("%Y-%m-%d")
+
+        # Redisから画像ファイルパスのリストを取得
+        image_filepaths = redis_client.lrange(f"task_result:{task_id}:image_filepaths", 0, -1)
+
+        # PNGとJPGを分離するためのリストを準備
+        png_urls = []
+        jpg_urls = []
+
+        # ファイルパスを拡張子で区別してURLを生成
+        for filepath in image_filepaths:
+            filepath = filepath.decode('utf-8')
+            filename = os.path.basename(filepath)
+            if filepath.endswith('.png'):
+                png_urls.append(url_for('static', filename=f'output/{current_day}/png/{filename}'))
+            elif filepath.endswith('.jpg'):
+                jpg_urls.append(url_for('static', filename=f'output/{current_day}/jpg/{filename}'))
+
         parameters = redis_client.hgetall(f"task_params:{task_id}")
 
         if start_time:
@@ -338,10 +377,8 @@ def task_result():
         else:
             start_time = "N/A"
 
-        if end_time:
-            end_time = end_time.decode('utf-8')
-        else:
-            end_time = "N/A"
+        # end_timeはすでにfloatとして処理されているため、ここではそのまま文字列に変換して使用
+        end_time_str = datetime.fromtimestamp(end_time_float).strftime('%Y-%m-%d %H:%M:%S') if end_time else "N/A"
 
         decoded_parameters = {k.decode('utf-8'): v.decode('utf-8') for k, v in parameters.items()}
 
@@ -350,10 +387,12 @@ def task_result():
                 'output': "",
                 'error': "Task ID not found or results expired",
                 'start_time': start_time,
-                'end_time': end_time,
+                'end_time': end_time_str,
                 'task_id': task_id,
                 'status': "unknown",
-                'parameters': decoded_parameters
+                'parameters': decoded_parameters,
+                'png_urls': png_urls,
+                'jpg_urls': jpg_urls
             }
             return redirect(url_for('show_task_result', task_id=task_id))
 
@@ -366,10 +405,12 @@ def task_result():
             'output': output.decode('utf-8') if output else "",
             'error': error.decode('utf-8') if error else "",
             'start_time': start_time,
-            'end_time': end_time,
+            'end_time': end_time_str,
             'task_id': task_id,
             'status': status,
-            'parameters': decoded_parameters
+            'parameters': decoded_parameters,
+            'png_urls': png_urls,
+            'jpg_urls': jpg_urls
         }
         return redirect(url_for('show_task_result', task_id=task_id))
 
@@ -392,6 +433,16 @@ def cancel_task():
     try:
         task_id = request.form['task_id']
 
+        # Redisから画像ファイルパスのリストを取得
+        image_filepaths = redis_client.lrange(f"task_result:{task_id}:image_filepaths", 0, -1)
+
+        # すべての画像ファイルを削除
+        for filepath in image_filepaths:
+            filepath = filepath.decode('utf-8')  # バイト文字列をデコード
+            if os.path.exists(filepath):
+                os.remove(filepath)
+
+        # Redisから関連するデータを削除
         redis_client.sadd('cancelled_tasks', task_id)
 
         end_time = datetime.now().timestamp()
@@ -405,7 +456,8 @@ def cancel_task():
         redis_client.delete(f"task_end_time:{task_id}")
         redis_client.delete(f"task_result:{task_id}:output")
         redis_client.delete(f"task_result:{task_id}:error")
-        
+        redis_client.delete(f"task_result:{task_id}:image_filepaths")
+
         # セッションにキャンセル成功メッセージを保存し、リダイレクト
         session['success_message'] = f"タスク {task_id} はキャンセルされました。"
         return redirect(url_for('task_cancelled_page', task_id=task_id))
@@ -446,6 +498,16 @@ def delete_all_tasks():
         processing_tasks = redis_client.smembers('processing_tasks')
         for task_id in processing_tasks:
             redis_client.sadd('cancelled_tasks', task_id)
+
+        # すべての task_result:{task_id}:image_filepaths キーを取得して画像ファイルの削除
+        task_result_keys = redis_client.keys('task_result:*:image_filepaths')
+        for key in task_result_keys:
+            # Redisから画像ファイルのパスのリストを取得
+            image_filepaths = redis_client.lrange(key, 0, -1)
+            for filepath in image_filepaths:
+                filepath = filepath.decode('utf-8')  # バイト文字列をデコード
+                if os.path.exists(filepath):
+                    os.remove(filepath)
 
         # Redisからすべてのタスク関連データを削除
         redis_client.delete('processing_tasks')

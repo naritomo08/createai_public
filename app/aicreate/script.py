@@ -57,15 +57,21 @@ def Main(i,topname):
     now = datetime.datetime.now()
     current_day = now.strftime("%Y-%m-%d")
     current_daytime = now.strftime("%Y%m%d%H%M%S")
-    dir_for_output_png = "./output/" + current_day + "/png"
-    dir_for_output_jpg = "./output/" + current_day + "/jpg"
+    dir_for_output_png = "./static/output/" + current_day + "/png"
+    dir_for_output_jpg = "./static/output/" + current_day + "/jpg"
 
     os.makedirs(dir_for_output_png, exist_ok=True)
     os.makedirs(dir_for_output_jpg, exist_ok=True)
 
-    g.save_image_as_png_and_jpg(topname,i,imgdata, dir_for_output_png, dir_for_output_jpg, chara, modelname, current_daytime)
+    png_filepath, jpg_filepath = g.save_image_as_png_and_jpg(topname,i,imgdata, dir_for_output_png, dir_for_output_jpg, chara, modelname, current_daytime)
 
-    g.set_permissions_recursive("./output/", 0o777)
+    g.set_permissions_recursive("./static/output/", 0o777)
+    
+    redis_client = redis.Redis(host='redis', port=6379, db=0)
+    
+    # ファイルパスをRedisに保存
+    redis_client.rpush(f"task_result:{v.task_id}:image_filepaths", png_filepath)
+    redis_client.rpush(f"task_result:{v.task_id}:image_filepaths", jpg_filepath)
 
 # メインルーチン
 
