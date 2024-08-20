@@ -26,3 +26,4 @@ isyouon = 0
 topnameselect = 0
 topnamein = ""
 timeout = 300
+task_id = ""

@@ -21,8 +21,11 @@ def save_image_as_png_and_jpg(topname,i,imgdata, dir_for_output_png, dir_for_out
     img.convert('RGB').save(jpg_output_path, "JPEG")
 
     # PNG形式で保存
-    with open(f"{dir_for_output_png}/{topname}{i}-{chara}-{modelname}-{current_daytime}.png", "wb") as f:
+    png_output_path = f"{dir_for_output_png}/{topname}{i}-{chara}-{modelname}-{current_daytime}.png"
+    with open(png_output_path, "wb") as f:
         f.write(imgdata)
+
+    return png_output_path, jpg_output_path
 
 def set_permissions_recursive(dir_path, permissions):
     for root, dirs, files in os.walk(dir_path):

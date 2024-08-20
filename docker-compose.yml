@@ -8,12 +8,14 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ./app/output:/app/output
+      - ./app/static/output:/app/static/output
     restart: always
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - TZ=Asia/Tokyo
+    env_file:
+      - .env
 
   redis:
     image: redis:latest
@@ -31,7 +33,7 @@ services:
     build: ./app
     command: celery -A app.celery worker --loglevel=info
     volumes:
-      - ./app/output:/app/output
+      - ./app/static/output:/app/static/output
     depends_on:
       - redis
     environment:
@@ -44,7 +46,7 @@ services:
     build: ./app
     command: python start_celery_beat.py
     volumes:
-      - ./app/output:/app/output
+      - ./app/static/output:/app/static/output
     depends_on:
       - redis
     environment:

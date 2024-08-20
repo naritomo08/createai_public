@@ -122,17 +122,21 @@ def get_tasks():
 
 def ask_chatgpt(prompt):
     try:
-        # ChatGPTにプロンプトを送り、改良されたプロンプトを得る
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a high-performance chatbot. Follow the rules below:\n\nRules:\n- Refine the illustration prompt to make it better.\n- Use the format '(element: weight), (element: weight), ...'.\n- Based on the current prompt, determine the situation more specifically.\n- Add, change, or remove elements as needed to fit the situation.\n- Adjust the number of elements to around 15.\n- Use English or Danbooru tags for elements.\n- Keep the number of words in each element to within 4.\n- Split elements if they are too long or unclear.\n- Move important elements to the front and less important phrases to the back.\n- Adjust the weight of elements between 0.5 and 1.3 to emphasize key aspects."},
-                {"role": "user", "content": prompt}
-            ]
-        )
+        if (prompt == ""):
+            refined_prompt = ""
+        else :
+            # ChatGPTにプロンプトを送り、改良されたプロンプトを得る
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a high-performance chatbot. Follow the rules below:\n\nRules:\n- Refine the illustration prompt to make it better.\n- Use the format '(element: weight), (element: weight), ...'.\n- Based on the current prompt, determine the situation more specifically.\n- Add, change, or remove elements as needed to fit the situation.\n- Adjust the number of elements to around 15.\n- Use English or Danbooru tags for elements.\n- Keep the number of words in each element to within 4.\n- Split elements if they are too long or unclear.\n- Move important elements to the front and less important phrases to the back.\n- Adjust the weight of elements between 0.5 and 1.3 to emphasize key aspects."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
 
-        # 改良されたプロンプトを取得
-        refined_prompt = response.choices[0].message['content']
+            # 改良されたプロンプトを取得
+            refined_prompt = response.choices[0].message['content']
+        
         return refined_prompt
 
     except Exception as e:
@@ -143,7 +147,6 @@ def run_program():
     try:
         log_to_redis(f"Received form data: {request.form}")
         task_id = str(uuid.uuid4())
-        gazoucreate = int(request.form['gazoucreate'])
         sd_url = request.form['sd_url']
         gazousize = int(request.form['gazousize'])
         hres = 'hres' in request.form
@@ -155,8 +158,6 @@ def run_program():
         steps = int(request.form['steps'])
         cfg = int(request.form['cfg'])
         hres_steps = int(request.form['hres_steps'])
-        topnameselect = int(request.form['topnameselect'])
-        topnamein = request.form['topnamein']
         timeout = int(request.form['timeout'])
         
         #入力文の変換
@@ -164,11 +165,10 @@ def run_program():
         input_trans = ask_chatgpt(input)
         promptinput = input_trans.replace('\n', ',').replace('\r', ',')
 
-        log_to_redis(f"Parsed form data: gazoucreate={gazoucreate}, sd_url={sd_url}, gazousize={gazousize}, promptinput={promptinput}, hres={str(hres)}, hres_size={hres_size}, seed={seed}, gazouselect={gazouselect}, sampler={sampler}, samplerselect={samplerselect}, steps={steps}, cfg={cfg}, hres_steps={hres_steps}, topnameselect={topnameselect}, topnamein={topnamein}, timeout={timeout}")
+        log_to_redis(f"Parsed form data: sd_url={sd_url}, gazousize={gazousize}, promptinput={promptinput}, hres={str(hres)}, hres_size={hres_size}, seed={seed}, gazouselect={gazouselect}, sampler={sampler}, samplerselect={samplerselect}, steps={steps}, cfg={cfg}, hres_steps={hres_steps}, timeout={timeout}")
 
         # タスクのパラメータと作成時刻を保存
         redis_client.hset(f"task_params:{task_id}", mapping={
-            'gazoucreate': gazoucreate,
             'sd_url': sd_url,
             'gazousize': gazousize,
             'promptinput': input,
@@ -181,14 +181,12 @@ def run_program():
             'steps': steps,
             'cfg': cfg,
             'hres_steps': hres_steps,
-            'topnameselect': topnameselect,
-            'topnamein': topnamein,
             'timeout': timeout
         })
         redis_client.set(f"task_created_at:{task_id}", time.time())
 
         # 非同期タスクのキューに追加
-        run_program_async.apply_async(args=[task_id, gazoucreate, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, sampler, samplerselect, steps, cfg, hres_steps, topnameselect, topnamein, timeout])
+        run_program_async.apply_async(args=[task_id, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, sampler, samplerselect, steps, cfg, hres_steps, timeout])
 
         # 処理中タスクIDリストに追加
         redis_client.sadd('processing_tasks', task_id)
@@ -212,7 +210,7 @@ def task_started_page():
     return render_template('task_started.html', task_id=task_id)
 
 @celery.task
-def run_program_async(task_id, gazoucreate, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, sampler, samplerselect, steps, cfg, hres_steps, topnameselect, topnamein, timeout):
+def run_program_async(task_id, sd_url, gazousize, promptinput, hres, hres_size, seed, gazouselect, sampler, samplerselect, steps, cfg, hres_steps, timeout):
     try:
         start_time = datetime.now().timestamp()
         redis_client.set(f"task_start_time:{task_id}", start_time)
@@ -221,7 +219,6 @@ def run_program_async(task_id, gazoucreate, sd_url, gazousize, promptinput, hres
         with open('aicreate/variable.py', 'r') as file:
             base_content = file.read()
 
-        base_content = update_variable(base_content, 'gazoucreate', gazoucreate)
         base_content = update_variable(base_content, 'sd_url', sd_url)
         base_content = update_variable(base_content, 'gazousize', gazousize)
         base_content = update_variable(base_content, 'promptinput', promptinput)
@@ -234,9 +231,8 @@ def run_program_async(task_id, gazoucreate, sd_url, gazousize, promptinput, hres
         base_content = update_variable(base_content, 'steps', steps)
         base_content = update_variable(base_content, 'cfg', cfg)
         base_content = update_variable(base_content, 'hres_steps', hres_steps)
-        base_content = update_variable(base_content, 'topnameselect', topnameselect)
-        base_content = update_variable(base_content, 'topnamein', topnamein)
         base_content = update_variable(base_content, 'timeout', timeout)
+        base_content = update_variable(base_content, 'task_id', task_id)
 
         with open('aicreate/variable.py', 'w') as file:
             file.write(base_content)
@@ -351,6 +347,31 @@ def task_result():
         end_time = redis_client.get(f"task_end_time:{task_id}")
         status = redis_client.hget(f"task_params:{task_id}", "status")
 
+        # end_timeが存在する場合、日付を取得
+        if end_time:
+            end_time_float = float(end_time.decode('utf-8'))  # Redisから取得したend_timeをfloatに変換
+            end_datetime = datetime.fromtimestamp(end_time_float)  # UNIXタイムスタンプからdatetimeに変換
+            current_day = end_datetime.strftime("%Y-%m-%d")  # "YYYY-MM-DD"形式で日付を取得
+        else:
+            # end_timeがない場合のデフォルト処理 (例: 現在の日付を使用する)
+            current_day = datetime.now().strftime("%Y-%m-%d")
+
+        # Redisからファイルパスを取得し、デコードする
+        png_filepath = redis_client.get(f"task_result:{task_id}:png_filepath")
+        jpg_filepath = redis_client.get(f"task_result:{task_id}:jpg_filepath")
+
+        # デコード処理を追加
+        png_filepath = png_filepath.decode('utf-8') if png_filepath else None
+        jpg_filepath = jpg_filepath.decode('utf-8') if jpg_filepath else None
+
+        # ファイルパスが存在する場合にファイル名を取得
+        png_filename = os.path.basename(png_filepath) if png_filepath else None
+        jpg_filename = os.path.basename(jpg_filepath) if jpg_filepath else None
+
+        # ファイル名が存在する場合にURLを生成
+        png_url = url_for('static', filename=f'output/{current_day}/png/{png_filename}') if png_filename else None
+        jpg_url = url_for('static', filename=f'output/{current_day}/jpg/{jpg_filename}') if jpg_filename else None
+
         parameters = redis_client.hgetall(f"task_params:{task_id}")
 
         if start_time:
@@ -358,10 +379,8 @@ def task_result():
         else:
             start_time = "N/A"
 
-        if end_time:
-            end_time = end_time.decode('utf-8')
-        else:
-            end_time = "N/A"
+        # end_timeはすでにfloatとして処理されているため、ここではそのまま文字列に変換して使用
+        end_time_str = datetime.fromtimestamp(end_time_float).strftime('%Y-%m-%d %H:%M:%S') if end_time else "N/A"
 
         decoded_parameters = {k.decode('utf-8'): v.decode('utf-8') for k, v in parameters.items()}
 
@@ -370,10 +389,12 @@ def task_result():
                 'output': "",
                 'error': "Task ID not found or results expired",
                 'start_time': start_time,
-                'end_time': end_time,
+                'end_time': end_time_str,
                 'task_id': task_id,
                 'status': "unknown",
-                'parameters': decoded_parameters
+                'parameters': decoded_parameters,
+                'png_filepath': png_url,
+                'jpg_filepath': jpg_url
             }
             return redirect(url_for('show_task_result', task_id=task_id))
 
@@ -386,10 +407,12 @@ def task_result():
             'output': output.decode('utf-8') if output else "",
             'error': error.decode('utf-8') if error else "",
             'start_time': start_time,
-            'end_time': end_time,
+            'end_time': end_time_str,
             'task_id': task_id,
             'status': status,
-            'parameters': decoded_parameters
+            'parameters': decoded_parameters,
+            'png_filepath': png_url,
+            'jpg_filepath': jpg_url
         }
         return redirect(url_for('show_task_result', task_id=task_id))
 
@@ -412,6 +435,22 @@ def cancel_task():
     try:
         task_id = request.form['task_id']
 
+        # Redisから画像ファイルのパスを取得
+        png_filepath = redis_client.get(f"task_result:{task_id}:png_filepath")
+        jpg_filepath = redis_client.get(f"task_result:{task_id}:jpg_filepath")
+
+        # ファイルが存在する場合は削除
+        if png_filepath:
+            png_filepath = png_filepath.decode('utf-8')  # バイト文字列をデコード
+            if os.path.exists(png_filepath):
+                os.remove(png_filepath)
+
+        if jpg_filepath:
+            jpg_filepath = jpg_filepath.decode('utf-8')  # バイト文字列をデコード
+            if os.path.exists(jpg_filepath):
+                os.remove(jpg_filepath)
+
+        # Redisから関連するデータを削除
         redis_client.sadd('cancelled_tasks', task_id)
 
         end_time = datetime.now().timestamp()
@@ -425,7 +464,9 @@ def cancel_task():
         redis_client.delete(f"task_end_time:{task_id}")
         redis_client.delete(f"task_result:{task_id}:output")
         redis_client.delete(f"task_result:{task_id}:error")
-        
+        redis_client.delete(f"task_result:{task_id}:png_filepath")
+        redis_client.delete(f"task_result:{task_id}:jpg_filepath")
+
         # セッションにキャンセル成功メッセージを保存し、リダイレクト
         session['success_message'] = f"タスク {task_id} はキャンセルされました。"
         return redirect(url_for('task_cancelled_page', task_id=task_id))
@@ -466,6 +507,17 @@ def delete_all_tasks():
         processing_tasks = redis_client.smembers('processing_tasks')
         for task_id in processing_tasks:
             redis_client.sadd('cancelled_tasks', task_id)
+
+        # すべての task_result:* キーを取得して画像ファイルの削除
+        task_result_keys = redis_client.keys('task_result:*')
+        for key in task_result_keys:
+            if key.endswith(b':png_filepath') or key.endswith(b':jpg_filepath'):
+                # Redisから画像ファイルのパスを取得
+                filepath = redis_client.get(key)
+                if filepath:
+                    filepath = filepath.decode('utf-8')  # バイト文字列をデコード
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
 
         # Redisからすべてのタスク関連データを削除
         redis_client.delete('processing_tasks')

@@ -15,14 +15,11 @@ document.addEventListener('DOMContentLoaded', function() {
             'gazousize': 1,
             'gazouselect': 2,
             'seed': -1,
-            'gazoucreate': 1,
             'sampler': 0,
             'samplerselect': 7,
             'steps': 30,
             'cfg': 7,
             'isyouon': 1,
-            'topnameselect': 0,
-            'topnamein': '',
             'timeout': 300
         };
 
@@ -77,14 +74,6 @@ document.addEventListener('DOMContentLoaded', function() {
             exconfDiv.style.display = 'none';
         }
 
-        // topnameの初期化
-        var topnameDiv = document.getElementById('topnameDiv');
-        var topnameselectValue = document.getElementById('topnameselect').value;
-        if (topnameselectValue == '1') {
-            topnameDiv.style.display = 'block';
-        } else {
-            topnameDiv.style.display = 'none';
-        }
     }
 
     // ページロード時に初期化
@@ -121,14 +110,6 @@ document.addEventListener('DOMContentLoaded', function() {
             exconfDiv.style.display = 'block';
         } else {
             exconfDiv.style.display = 'none';
-        }
-    });
-    document.getElementById('topnameselect').addEventListener('change', function() {
-        var topnameDiv = document.getElementById('topnameDiv');
-        if (this.value == '1') {
-            topnameDiv.style.display = 'block';
-        } else {
-            topnameDiv.style.display = 'none';
         }
     });
 

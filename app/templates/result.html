@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base2.html" %}
 
 {% block content %}
     <div class="container">
@@ -12,6 +12,18 @@
                 <pre class="bg-light p-3 border">{{ output }}</pre>
                 <h3 class="mt-4">エラー</h3>
                 <pre class="bg-light p-3 border">{{ error }}</pre>
+
+                <!-- 生成された画像 -->
+                <h3 class="mt-4">生成された画像</h3>
+                <div class="mt-2">
+                    {% if png_filepath %}
+                    <a href="#" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-image="{{ png_filepath }}">View PNG</a>
+                    {% endif %}
+                    {% if jpg_filepath %}
+                    <a href="#" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-image="{{ jpg_filepath }}">View JPG</a>
+                    {% endif %}
+                </div>
+
                 <div class="mt-4">
                     <button class="btn btn-secondary" onclick='reflectToTop({{ parameters|tojson|safe }})'>トップに反映(高解像度化設定は除く)</button>
                 </div>
@@ -28,4 +40,30 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">画像プレビュー</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImage" src="" alt="Generated Image" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        var imageModal = document.getElementById('imageModal');
+        imageModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget; // ボタンを取得
+            var imageUrl = button.getAttribute('data-bs-image'); // data-bs-image 属性からURLを取得
+            var modalImage = document.getElementById('modalImage');
+            modalImage.src = imageUrl; // モーダルの画像を更新
+        });
+    </script>
 {% endblock %}
