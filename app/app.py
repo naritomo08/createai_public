@@ -286,12 +286,14 @@ def delete_expired_tasks():
         completed_tasks = redis_client.smembers('completed_tasks')
         current_time = time.time()
 
+        # タスクごとに終了時間を設定する処理
         for task_id in completed_tasks:
             task_id = task_id.decode('utf-8')
             task_end_time = redis_client.get(f"task_end_time:{task_id}")
             if not task_end_time:
                 set_end_time_for_task(task_id)
 
+        # タスクの削除処理
         for task_id in completed_tasks:
             try:
                 task_id = task_id.decode('utf-8')
@@ -307,8 +309,25 @@ def delete_expired_tasks():
                     task_end_time = float(task_end_time.decode('utf-8'))
 
                     if current_time - task_end_time > RESULT_EXPIRATION_TIME:
+                        # 画像ファイルの削除処理を追加
+                        png_filepath = redis_client.get(f"task_result:{task_id}:png_filepath")
+                        jpg_filepath = redis_client.get(f"task_result:{task_id}:jpg_filepath")
+
+                        if png_filepath:
+                            png_filepath = png_filepath.decode('utf-8')
+                            if os.path.exists(png_filepath):
+                                os.remove(png_filepath)
+
+                        if jpg_filepath:
+                            jpg_filepath = jpg_filepath.decode('utf-8')
+                            if os.path.exists(jpg_filepath):
+                                os.remove(jpg_filepath)
+
+                        # タスク関連のRedisキーを削除
                         redis_client.delete(f"task_result:{task_id}:output")
                         redis_client.delete(f"task_result:{task_id}:error")
+                        redis_client.delete(f"task_result:{task_id}:png_filepath")
+                        redis_client.delete(f"task_result:{task_id}:jpg_filepath")
                         redis_client.delete(f"task_created_at:{task_id}")
                         redis_client.delete(f"task_start_time:{task_id}")
                         redis_client.delete(f"task_end_time:{task_id}")
