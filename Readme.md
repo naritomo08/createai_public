@@ -31,7 +31,8 @@ docker-compose up -d
 http://localhost:3100
 
 画像保管先
-app/output
+app/static/output
+または結果画面からモーダル画像閲覧、入手可能
 
 画像生成ログ
 log_writer/output

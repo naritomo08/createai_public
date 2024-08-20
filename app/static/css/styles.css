@@ -1,0 +1,18 @@
+.modal-dialog {
+    max-width: 90vw; /* モーダルの最大幅を画面幅の90%に設定 */
+    max-height: 90vh; /* モーダルの最大高さを画面高さの90%に設定 */
+}
+
+.modal-content {
+    height: 100%;
+}
+
+.modal-body {
+    overflow-y: auto; /* コンテンツがモーダル内に収まりきらない場合にスクロール可能にする */
+    max-height: 80vh; /* モーダルのコンテンツエリアの最大高さを設定 */
+}
+
+.carousel-item img {
+    max-height: 70vh; /* 画像の高さを画面の70%に制限 */
+    object-fit: contain; /* 画像をモーダル内に収めるためにアスペクト比を保ちながら収める */
+}
