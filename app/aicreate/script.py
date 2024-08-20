@@ -71,8 +71,8 @@ def Main(i,topname):
     redis_client = redis.Redis(host='redis', port=6379, db=0)
     
     # ファイルパスをRedisに保存
-    redis_client.set(f"task_result:{v.task_id}:png_filepath", png_filepath)
-    redis_client.set(f"task_result:{v.task_id}:jpg_filepath", jpg_filepath)
+    redis_client.rpush(f"task_result:{v.task_id}:image_filepaths", png_filepath)
+    redis_client.rpush(f"task_result:{v.task_id}:image_filepaths", jpg_filepath)
 
 # メインルーチン
 

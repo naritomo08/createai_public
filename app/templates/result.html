@@ -16,11 +16,11 @@
                 <!-- 生成された画像 -->
                 <h3 class="mt-4">生成された画像</h3>
                 <div class="mt-2">
-                    {% if png_filepath %}
-                    <a href="#" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-image="{{ png_filepath }}">View PNG</a>
+                    {% if png_urls %}
+                        <a href="#" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#pngModal">View PNG</a>
                     {% endif %}
-                    {% if jpg_filepath %}
-                    <a href="#" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-image="{{ jpg_filepath }}">View JPG</a>
+                    {% if jpg_urls %}
+                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#jpgModal">View JPG</a>
                     {% endif %}
                 </div>
 
@@ -41,29 +41,65 @@
         </div>
     </div>
 
-    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <!-- PNGモーダルの定義 -->
+    <div class="modal fade" id="pngModal" tabindex="-1" aria-labelledby="pngModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="imageModalLabel">画像プレビュー</h5>
+                    <h5 class="modal-title" id="pngModalLabel">PNG画像プレビュー</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body text-center">
-                    <img id="modalImage" src="" alt="Generated Image" class="img-fluid">
+                <div class="modal-body">
+                    <div id="pngCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            {% for image_url in png_urls %}
+                                <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                    <img src="{{ image_url }}" class="d-block w-100" alt="PNG Image">
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#pngCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#pngCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-{% endblock %}
 
-{% block scripts %}
-    <script>
-        var imageModal = document.getElementById('imageModal');
-        imageModal.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget; // ボタンを取得
-            var imageUrl = button.getAttribute('data-bs-image'); // data-bs-image 属性からURLを取得
-            var modalImage = document.getElementById('modalImage');
-            modalImage.src = imageUrl; // モーダルの画像を更新
-        });
-    </script>
+    <!-- JPGモーダルの定義 -->
+    <div class="modal fade" id="jpgModal" tabindex="-1" aria-labelledby="jpgModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="jpgModalLabel">JPG画像プレビュー</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="jpgCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            {% for image_url in jpg_urls %}
+                                <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                    <img src="{{ image_url }}" class="d-block w-100" alt="JPG Image">
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#jpgCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#jpgCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
