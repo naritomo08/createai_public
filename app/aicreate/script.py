@@ -2,6 +2,7 @@ import requests,datetime,os,time,sys,traceback
 import base as g
 import variable as v
 import chara as c
+import redis
 
 def Main(i,topname):
 
