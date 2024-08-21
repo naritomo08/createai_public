@@ -57,8 +57,8 @@ def Main(i,topname):
 
     now = datetime.datetime.now()
     current_daytime = now.strftime("%Y%m%d%H%M%S")
-    dir_for_output_png = "./static/output/" + "/png"
-    dir_for_output_jpg = "./static/output/" + "/jpg"
+    dir_for_output_png = "./static/output/png"
+    dir_for_output_jpg = "./static/output/jpg"
 
     os.makedirs(dir_for_output_png, exist_ok=True)
     os.makedirs(dir_for_output_jpg, exist_ok=True)
