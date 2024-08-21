@@ -70,6 +70,9 @@
                 </div>
                 <div class="modal-footer">
                     <button id="togglePngSlideBtn" class="btn btn-secondary">スライドを有効化</button>
+                    {% if status == 'completed' %}
+                        <a href="{{ url_for('download_png_zip', task_id=task_id) }}" class="btn btn-primary">ZIPで一括DL</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -104,6 +107,9 @@
                 </div>
                 <div class="modal-footer">
                     <button id="toggleJpgSlideBtn" class="btn btn-secondary">スライドを有効化</button>
+                    {% if status == 'completed' %}
+                        <a href="{{ url_for('download_jpg_zip', task_id=task_id) }}" class="btn btn-primary">ZIPで一括DL</a>
+                    {% endif %}
                 </div>
             </div>
         </div>

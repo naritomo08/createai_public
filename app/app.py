@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, jsonify, session, redirect, url_for
+from flask import Flask, send_file, request, render_template, jsonify, session, redirect, url_for
 import re
 import redis
 import uuid
@@ -11,6 +11,7 @@ import json
 from flask_wtf.csrf import CSRFProtect
 import os
 import openai
+import zipfile
 
 app = Flask(__name__)
 
@@ -313,13 +314,47 @@ def delete_expired_tasks():
 
                     if current_time - task_end_time > RESULT_EXPIRATION_TIME:
                         # 画像ファイルパスのリストをRedisから取得
-                        image_filepaths = redis_client.lrange(f"task_result:{task_id}:image_filepaths", 0, -1)
+                        # Redisから画像ファイルのパスを取得
+                        image_files = redis_client.lrange(f"task_result:{task_id}:image_filepaths", 0, -1)
 
-                        # すべての画像ファイルを削除
-                        for filepath in image_filepaths:
-                            filepath = filepath.decode('utf-8')
-                            if os.path.exists(filepath):
-                                os.remove(filepath)
+                        if image_files:
+                            # PNGとJPGのディレクトリを取得
+                            png_files = [f.decode('utf-8') for f in image_files if '/png/' in f.decode('utf-8')]
+                            jpg_files = [f.decode('utf-8') for f in image_files if '/jpg/' in f.decode('utf-8')]
+
+                            if png_files:
+                                # PNG ZIPファイルのパスを生成
+                                png_directory = os.path.dirname(png_files[0])
+                                zip_filepath_png = os.path.join(png_directory, f"{task_id}_png_images.zip")
+                                
+                                # PNGファイルとZIPファイルを削除
+                                for file_path in png_files:
+                                    if os.path.exists(file_path):
+                                        print(f"Deleting PNG file: {file_path}")
+                                        os.remove(file_path)
+
+                                if os.path.exists(zip_filepath_png):
+                                    print(f"Deleting PNG ZIP file: {zip_filepath_png}")
+                                    os.remove(zip_filepath_png)
+                                else:
+                                    print(f"PNG ZIP file not found: {zip_filepath_png}")
+
+                            if jpg_files:
+                                # JPG ZIPファイルのパスを生成
+                                jpg_directory = os.path.dirname(jpg_files[0])
+                                zip_filepath_jpg = os.path.join(jpg_directory, f"{task_id}_jpg_images.zip")
+                                
+                                # JPGファイルとZIPファイルを削除
+                                for file_path in jpg_files:
+                                    if os.path.exists(file_path):
+                                        print(f"Deleting JPG file: {file_path}")
+                                        os.remove(file_path)
+
+                                if os.path.exists(zip_filepath_jpg):
+                                    print(f"Deleting JPG ZIP file: {zip_filepath_jpg}")
+                                    os.remove(zip_filepath_jpg)
+                                else:
+                                    print(f"JPG ZIP file not found: {zip_filepath_jpg}")
 
                         # タスク関連のRedisキーを削除
                         redis_client.delete(f"task_result:{task_id}:output")
@@ -444,14 +479,47 @@ def cancel_task():
     try:
         task_id = request.form['task_id']
 
-        # Redisから画像ファイルパスのリストを取得
-        image_filepaths = redis_client.lrange(f"task_result:{task_id}:image_filepaths", 0, -1)
+        # Redisから画像ファイルのパスを取得
+        image_files = redis_client.lrange(f"task_result:{task_id}:image_filepaths", 0, -1)
 
-        # すべての画像ファイルを削除
-        for filepath in image_filepaths:
-            filepath = filepath.decode('utf-8')  # バイト文字列をデコード
-            if os.path.exists(filepath):
-                os.remove(filepath)
+        if image_files:
+            # PNGとJPGのディレクトリを取得
+            png_files = [f.decode('utf-8') for f in image_files if '/png/' in f.decode('utf-8')]
+            jpg_files = [f.decode('utf-8') for f in image_files if '/jpg/' in f.decode('utf-8')]
+
+            if png_files:
+                # PNG ZIPファイルのパスを生成
+                png_directory = os.path.dirname(png_files[0])
+                zip_filepath_png = os.path.join(png_directory, f"{task_id}_png_images.zip")
+                
+                # PNGファイルとZIPファイルを削除
+                for file_path in png_files:
+                    if os.path.exists(file_path):
+                        print(f"Deleting PNG file: {file_path}")
+                        os.remove(file_path)
+
+                if os.path.exists(zip_filepath_png):
+                    print(f"Deleting PNG ZIP file: {zip_filepath_png}")
+                    os.remove(zip_filepath_png)
+                else:
+                    print(f"PNG ZIP file not found: {zip_filepath_png}")
+
+            if jpg_files:
+                # JPG ZIPファイルのパスを生成
+                jpg_directory = os.path.dirname(jpg_files[0])
+                zip_filepath_jpg = os.path.join(jpg_directory, f"{task_id}_jpg_images.zip")
+                
+                # JPGファイルとZIPファイルを削除
+                for file_path in jpg_files:
+                    if os.path.exists(file_path):
+                        print(f"Deleting JPG file: {file_path}")
+                        os.remove(file_path)
+
+                if os.path.exists(zip_filepath_jpg):
+                    print(f"Deleting JPG ZIP file: {zip_filepath_jpg}")
+                    os.remove(zip_filepath_jpg)
+                else:
+                    print(f"JPG ZIP file not found: {zip_filepath_jpg}")
 
         # Redisから関連するデータを削除
         redis_client.sadd('cancelled_tasks', task_id)
@@ -505,49 +573,122 @@ def health_check():
 @app.route('/delete_all_tasks', methods=['POST'])
 def delete_all_tasks():
     try:
-        # 実行中のタスクを取得し、キャンセルリストに追加
-        processing_tasks = redis_client.smembers('processing_tasks')
-        for task_id in processing_tasks:
+        # processing_tasks、completed_tasks、running_tasks など、すべてのタスクのキーを取得
+        all_task_keys = redis_client.keys('task_params:*')  # task_params:* はすべてのタスクのキーの一部
+
+        for task_key in all_task_keys:
+            task_id = task_key.split(b':')[-1].decode('utf-8')
             redis_client.sadd('cancelled_tasks', task_id)
 
-        # すべての task_result:{task_id}:image_filepaths キーを取得して画像ファイルの削除
-        task_result_keys = redis_client.keys('task_result:*:image_filepaths')
-        for key in task_result_keys:
-            # Redisから画像ファイルのパスのリストを取得
-            image_filepaths = redis_client.lrange(key, 0, -1)
-            for filepath in image_filepaths:
-                filepath = filepath.decode('utf-8')  # バイト文字列をデコード
-                if os.path.exists(filepath):
-                    os.remove(filepath)
+            # Redisから画像ファイルのパスを取得
+            image_files = redis_client.lrange(f"task_result:{task_id}:image_filepaths", 0, -1)
+
+            if image_files:
+                # PNGとJPGのディレクトリを取得
+                png_files = [f.decode('utf-8') for f in image_files if '/png/' in f.decode('utf-8')]
+                jpg_files = [f.decode('utf-8') for f in image_files if '/jpg/' in f.decode('utf-8')]
+
+                if png_files:
+                    # PNG ZIPファイルのパスを生成
+                    png_directory = os.path.dirname(png_files[0])
+                    zip_filepath_png = os.path.join(png_directory, f"{task_id}_png_images.zip")
+                    
+                    # PNGファイルとZIPファイルを削除
+                    for file_path in png_files:
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+
+                    if os.path.exists(zip_filepath_png):
+                        os.remove(zip_filepath_png)
+
+                if jpg_files:
+                    # JPG ZIPファイルのパスを生成
+                    jpg_directory = os.path.dirname(jpg_files[0])
+                    zip_filepath_jpg = os.path.join(jpg_directory, f"{task_id}_jpg_images.zip")
+                    
+                    # JPGファイルとZIPファイルを削除
+                    for file_path in jpg_files:
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+
+                    if os.path.exists(zip_filepath_jpg):
+                        os.remove(zip_filepath_jpg)
 
         # Redisからすべてのタスク関連データを削除
-        redis_client.delete('processing_tasks')
-        redis_client.delete('completed_tasks')
-
-        keys = redis_client.keys('task_params:*')
-        for key in keys:
-            redis_client.delete(key)
-
-        keys = redis_client.keys('task_created_at:*')
-        for key in keys:
-            redis_client.delete(key)
-
-        keys = redis_client.keys('task_start_time:*')
-        for key in keys:
-            redis_client.delete(key)
-
-        keys = redis_client.keys('task_end_time:*')
-        for key in keys:
-            redis_client.delete(key)
-
-        keys = redis_client.keys('task_result:*')
-        for key in keys:
-            redis_client.delete(key)
+        task_keys = [
+            'processing_tasks',
+            'completed_tasks',
+            'running_tasks',
+            *redis_client.keys('task_params:*'),
+            *redis_client.keys('task_created_at:*'),
+            *redis_client.keys('task_start_time:*'),
+            *redis_client.keys('task_end_time:*'),
+            *redis_client.keys('task_result:*')
+        ]
+        redis_client.delete(*task_keys)
 
         return jsonify({'status': 'success', 'message': 'すべてのタスクが正常に削除されました。'})
     except Exception as e:
         log_to_redis(f"delete_all_tasksルートでエラーが発生しました: {e}")
         return jsonify({'status': 'error', 'message': 'タスクの削除中にエラーが発生しました。'}), 500
+
+@app.route('/download_png_zip/<task_id>', methods=['GET'])
+def download_png_zip(task_id):
+    # 画像ファイルのリストを取得 (正しいキーを使用)
+    image_files = redis_client.lrange(f'task_result:{task_id}:image_filepaths', 0, -1)
+    
+    # PNGファイルのみをフィルタリング
+    png_files = [file for file in image_files if file.decode('utf-8').endswith('.png')]
+    
+    # ZIPファイルの保存場所を設定
+    if png_files:
+        first_file_path = png_files[0].decode('utf-8')
+        zip_directory = os.path.dirname(first_file_path)
+        zip_filename = f"{task_id}_png_images.zip"
+        zip_filepath = os.path.join(zip_directory, zip_filename)
+
+        # ZIPファイルを作成
+        with zipfile.ZipFile(zip_filepath, 'w') as zipf:
+            for file_path in png_files:
+                file_path = file_path.decode('utf-8')  # Redisから取り出したバイナリ文字列をデコード
+                if os.path.exists(file_path):
+                    zipf.write(file_path, os.path.basename(file_path))
+                else:
+                    print(f"File {file_path} does not exist and will not be added to the ZIP file.")
+        
+        # ZIPファイルを送信
+        return send_file(zip_filepath, as_attachment=True, download_name=zip_filename)
+    else:
+        return "No PNG files found for the specified task ID.", 404
+
+@app.route('/download_jpg_zip/<task_id>', methods=['GET'])
+def download_jpg_zip(task_id):
+    # 画像ファイルのリストを取得 (正しいキーを使用)
+    image_files = redis_client.lrange(f'task_result:{task_id}:image_filepaths', 0, -1)
+    
+    # JPGファイルのみをフィルタリング
+    jpg_files = [file for file in image_files if file.decode('utf-8').endswith('.jpg')]
+    
+    # ZIPファイルの保存場所を設定
+    if jpg_files:
+        first_file_path = jpg_files[0].decode('utf-8')
+        zip_directory = os.path.dirname(first_file_path)
+        zip_filename = f"{task_id}_jpg_images.zip"
+        zip_filepath = os.path.join(zip_directory, zip_filename)
+
+        # ZIPファイルを作成
+        with zipfile.ZipFile(zip_filepath, 'w') as zipf:
+            for file_path in jpg_files:
+                file_path = file_path.decode('utf-8')  # Redisから取り出したバイナリ文字列をデコード
+                if os.path.exists(file_path):
+                    zipf.write(file_path, os.path.basename(file_path))
+                else:
+                    print(f"File {file_path} does not exist and will not be added to the ZIP file.")
+        
+        # ZIPファイルを送信
+        return send_file(zip_filepath, as_attachment=True, download_name=zip_filename)
+    else:
+        return "No PNG files found for the specified task ID.", 404
 
 # エラーハンドリング
 
