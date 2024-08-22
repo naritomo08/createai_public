@@ -22,6 +22,9 @@
                     {% if jpg_urls %}
                         <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#jpgModal">View JPG</a>
                     {% endif %}
+                    {% if jpg_urls %}
+                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#jpgModal2">View JPG スライド</a>
+                    {% endif %}
                 </div>
 
                 <div class="mt-4">
@@ -69,7 +72,6 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="togglePngSlideBtn" class="btn btn-secondary">スライドを有効化</button>
                     {% if status == 'completed' %}
                         <a href="{{ url_for('download_png_zip', task_id=task_id) }}" class="btn btn-primary">ZIPで一括DL</a>
                     {% endif %}
@@ -106,7 +108,6 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="toggleJpgSlideBtn" class="btn btn-secondary">スライドを有効化</button>
                     {% if status == 'completed' %}
                         <a href="{{ url_for('download_jpg_zip', task_id=task_id) }}" class="btn btn-primary">ZIPで一括DL</a>
                     {% endif %}
@@ -114,52 +115,64 @@
             </div>
         </div>
     </div>
+
+    <!-- JPGモーダルスライドの定義 -->
+    <div class="modal fade" id="jpgModal2" tabindex="-1" aria-labelledby="jpgModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="jpgModalLabel">JPG画像スライドプレビュー</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="jpgCarousel2" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            {% for image_url in jpg_urls %}
+                                <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                    <img src="{{ image_url }}" class="d-block w-100" alt="JPG Image">
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#jpgCarousel2" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#jpgCarousel2" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    {% if status == 'completed' %}
+                        <a href="{{ url_for('download_jpg_zip', task_id=task_id) }}" class="btn btn-primary">ZIPで一括DL</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // PNGモーダルのスライド制御
+    // PNGモーダルのスライドを無効化
     var pngCarousel = document.getElementById('pngCarousel');
     var pngCarouselInstance = new bootstrap.Carousel(pngCarousel, {
-        interval: 2000,  // 自動スライドのインターバルを2秒に設定
+        interval: false  // 自動スライドを無効化
     });
-    var togglePngSlideBtn = document.getElementById('togglePngSlideBtn');
-    var isPngSliding = true;  // 自動スライドを最初から有効にする
 
-    // 初期テキストを設定
-    togglePngSlideBtn.textContent = 'スライドを無効化';
-
-    togglePngSlideBtn.addEventListener('click', function () {
-        if (isPngSliding) {
-            pngCarouselInstance.pause();
-            togglePngSlideBtn.textContent = 'スライドを有効化';
-        } else {
-            pngCarouselInstance.cycle();
-            togglePngSlideBtn.textContent = 'スライドを無効化';
-        }
-        isPngSliding = !isPngSliding;
+    // JPGモーダルのスライドを無効化
+    var jpgCarousel = document.getElementById('jpgCarousel');
+    var jpgCarouselInstance = new bootstrap.Carousel(jpgCarousel, {
+        interval: false  // 自動スライドを無効化
     });
 
     // JPGモーダルのスライド制御
-    var jpgCarousel = document.getElementById('jpgCarousel');
+    var jpgCarousel = document.getElementById('jpgCarousel2');
     var jpgCarouselInstance = new bootstrap.Carousel(jpgCarousel, {
         interval: 2000,  // 自動スライドのインターバルを2秒に設定
     });
-    var toggleJpgSlideBtn = document.getElementById('toggleJpgSlideBtn');
-    var isJpgSliding = true;  // 自動スライドを最初から有効にする
 
-    // 初期テキストを設定
-    toggleJpgSlideBtn.textContent = 'スライドを無効化';
-
-    toggleJpgSlideBtn.addEventListener('click', function () {
-        if (isJpgSliding) {
-            jpgCarouselInstance.pause();
-            toggleJpgSlideBtn.textContent = 'スライドを有効化';
-        } else {
-            jpgCarouselInstance.cycle();
-            toggleJpgSlideBtn.textContent = 'スライドを無効化';
-        }
-        isJpgSliding = !isJpgSliding;
-    });
 </script>
 {% endblock %}
