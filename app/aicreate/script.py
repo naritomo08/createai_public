@@ -110,12 +110,12 @@ if __name__ == '__main__':
 
             styleselect = g.styleselect(i,v.styleselect,v.styleselect2)
             style = g.styleselect2(styleselect)
-
-            promptselect = girl + " BREAK " + isyouout +  " BREAK " + style + " BREAK " + script + " BREAK " + v.promptinput2
-            negapro = g.negapro + " BREAK " + negaproex + " BREAK " + v.negativeinput
-
+            
             checkmodel = g.modelselect(i,v.modelchange,v.modelselect)
-            model,modelname = g.modelselect2(checkmodel)
+            model,modelname,modelcredit = g.modelselect2(checkmodel)
+
+            promptselect = modelcredit + girl + " BREAK " + isyouout +  " BREAK " + style + " BREAK " + script + " BREAK " + v.promptinput2
+            negapro = g.negapro + " BREAK " + negaproex + " BREAK " + v.negativeinput
 
             samplernum = g.selectsampler(i,v.sampler,v.samplerselect)
             sampler = g.selectsampler2(samplernum)
