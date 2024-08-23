@@ -8,6 +8,6 @@ COPY . /app
 
 WORKDIR /app
 
-COPY aicreate/variable_tmp.py aicreate/variable.py
+COPY aicreate/variable.py aicreate/variable.py
 
 CMD ["python", "app.py"]
