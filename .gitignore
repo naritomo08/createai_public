@@ -4,3 +4,4 @@ __pycache__
 aicreate/variable.py
 celerybeat-schedule
 .env
+nginx_logs

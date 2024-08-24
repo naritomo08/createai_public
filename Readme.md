@@ -28,7 +28,7 @@ cd createapi_public
 rm -rf .git
 docker-compose up -d
 以下のURLでサイトアクセス
-http://localhost:3100
+http://localhost
 
 画像保管先
 app/static/output
@@ -36,6 +36,9 @@ app/static/output
 
 画像生成ログ
 log_writer/output
+
+サイトアクセスログ
+nginx/nginx_logs
 ```
 
 ### ソース編集時の注意

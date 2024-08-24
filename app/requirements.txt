@@ -6,3 +6,4 @@ celery
 pytz
 pillow
 flask-wtf
+gunicorn
