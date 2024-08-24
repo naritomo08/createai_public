@@ -11,6 +11,8 @@ services:
       - ./nginx/nginx_logs:/var/log/nginx
     depends_on:
       - createai-app
+    environment:
+      - TZ=Asia/Tokyo
 
   createai-app:
     build: ./app
