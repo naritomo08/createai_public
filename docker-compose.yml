@@ -3,10 +3,17 @@ volumes:
   cache_volume:
 
 services:
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx_logs:/var/log/nginx
+    depends_on:
+      - createai-app
+
   createai-app:
     build: ./app
-    ports:
-      - "3100:3100"
     volumes:
       - ./app/static/output:/app/static/output
     restart: always
