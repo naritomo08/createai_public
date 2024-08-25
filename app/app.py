@@ -11,6 +11,7 @@ import json
 from flask_wtf.csrf import CSRFProtect
 import os
 import zipfile
+from PIL import Image
 
 app = Flask(__name__)
 
@@ -671,6 +672,35 @@ def download_jpg_zip(task_id):
         return send_file(zip_filepath, as_attachment=True, download_name=zip_filename)
     else:
         return "No PNG files found for the specified task ID.", 404
+
+def get_png_metadata(png_file_path):
+    with Image.open(png_file_path) as img:
+        metadata = {
+            "width": img.width,
+            "height": img.height,
+            "mode": img.mode,
+            "format": img.format,
+            "info": img.info  # その他のメタデータ（解像度など）
+        }
+    return metadata
+
+@app.route('/get_metadata', methods=['POST'])
+def get_metadata():
+    data = request.json
+    image_filename = data.get('image_filename')
+
+    # 画像のディレクトリを指定する
+    image_dir = os.path.join(app.static_folder, 'output/png')  # PNGの場合
+    image_path = os.path.join(image_dir, image_filename)
+
+    if not os.path.isfile(image_path):
+        return jsonify({"error": "File not found"}), 404
+
+    try:
+        metadata = get_png_metadata(image_path)
+        return jsonify(metadata)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # エラーハンドリング
 
