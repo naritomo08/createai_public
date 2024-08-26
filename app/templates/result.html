@@ -28,7 +28,7 @@
                 </div>
 
                 <div class="mt-4">
-                    <button class="btn btn-secondary" onclick='reflectToTop({{ parameters|tojson|safe }})'>トップに反映(高解像度化設定は除く)</button>
+                    <button class="btn btn-secondary" onclick='reflectToTop({{ decoded_parameters|tojson|safe }})'>トップに反映(高解像度化設定は除く)</button>
                 </div>
                 <div class="mt-4">
                     <a href="/" class="btn btn-primary">戻る</a>

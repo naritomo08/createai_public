@@ -421,6 +421,7 @@ def task_result():
                 'end_time': end_time,
                 'task_id': task_id,
                 'status': "unknown",
+                'decoded_parameters': decoded_parameters,
                 'parameters': formatted_parameters,
                 'png_urls': png_urls,
                 'jpg_urls': jpg_urls
@@ -439,6 +440,7 @@ def task_result():
             'end_time': end_time,
             'task_id': task_id,
             'status': status,
+            'decoded_parameters': decoded_parameters,
             'parameters': formatted_parameters,
             'png_urls': png_urls,
             'jpg_urls': jpg_urls
