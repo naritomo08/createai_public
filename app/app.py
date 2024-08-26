@@ -410,6 +410,8 @@ def task_result():
             end_time = "N/A"
 
         decoded_parameters = {k.decode('utf-8'): v.decode('utf-8') for k, v in parameters.items()}
+        # パラメータをデコードし、JSON形式で整形
+        formatted_parameters = json.dumps(decoded_parameters, indent=4, ensure_ascii=False)
 
         if output is None and error is None:
             session['result_data'] = {
@@ -419,7 +421,7 @@ def task_result():
                 'end_time': end_time,
                 'task_id': task_id,
                 'status': "unknown",
-                'parameters': decoded_parameters,
+                'parameters': formatted_parameters,
                 'png_urls': png_urls,
                 'jpg_urls': jpg_urls
             }
@@ -437,7 +439,7 @@ def task_result():
             'end_time': end_time,
             'task_id': task_id,
             'status': status,
-            'parameters': decoded_parameters,
+            'parameters': formatted_parameters,
             'png_urls': png_urls,
             'jpg_urls': jpg_urls
         }
