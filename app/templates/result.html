@@ -239,6 +239,26 @@
             }
     
             var metadataDiv = document.getElementById("metadata");
+    
+            // 'parameters'の内容を改行で分離
+            const parameters = data.info.parameters;
+            const sections = parameters.split('\n');
+    
+            let positivePrompt = '';
+            let negativePrompt = '';
+            let settings = '';
+    
+            // セクションごとの内容を解析
+            sections.forEach(section => {
+                if (section.startsWith('Negative prompt:')) {
+                    negativePrompt = section.replace('Negative prompt:', '').trim();
+                } else if (section.startsWith('Steps:') || section.includes('Sampler:')) {
+                    settings += section.trim() + '<br>';
+                } else {
+                    positivePrompt += section.trim() + '<br>';
+                }
+            });
+    
             metadataDiv.innerHTML = `
                 <p><strong>メタデータ:</strong></p>
                 <p>loraを使用する際は&lt;lora:lora名:1.0&gt;で追記してください。</p>
@@ -246,7 +266,9 @@
                 <p>画像の高さ: ${data.height}px</p>
                 <p>色モード: ${data.mode}</p>
                 <p>フォーマット: ${data.format}</p>
-                <p>その他の情報: ${JSON.stringify(data.info)}</p>
+                <p><strong>プロンプト:</strong><br>${positivePrompt}</p>
+                <p><strong>ネガティブプロンプト:</strong><br>${negativePrompt}</p>
+                <p><strong>設定:</strong><br>${settings}</p>
             `;
             metadataDiv.style.display = "block";
         })
