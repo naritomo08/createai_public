@@ -53,6 +53,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <h5 id="png-filename-display" class="text-center"></h5>
                     <div id="pngCarousel" class="carousel slide" data-bs-ride="carousel">
                         <div class="carousel-inner">
                             {% for image_url in png_urls %}
@@ -92,6 +93,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <h5 id="jpg-filename-display" class="text-center"></h5>
                     <div id="jpgCarousel" class="carousel slide" data-bs-ride="carousel">
                         <div class="carousel-inner">
                             {% for image_url in jpg_urls %}
@@ -128,6 +130,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <h5 id="jpg-filename-display2" class="text-center"></h5>
                     <div id="jpgCarousel2" class="carousel slide" data-bs-ride="carousel">
                         <div class="carousel-inner">
                             {% for image_url in jpg_urls %}
@@ -178,36 +181,55 @@
     });
 
     document.addEventListener('DOMContentLoaded', function () {
-        var carousel = document.querySelector('#pngCarousel');
-    
-        // Carouselのスライドイベントにリスナーを追加
-        carousel.addEventListener('slid.bs.carousel', function () {
-            fetchMetadata(); // スライドが切り替わるたびにメタデータを取得
+        // PNGモーダル
+        var pngCarousel = document.getElementById('pngCarousel');
+        pngCarousel.addEventListener('slid.bs.carousel', function () {
+            updateFilenameAndMetadata('pngCarousel', 'png-filename-display');
         });
+        updateFilenameAndMetadata('pngCarousel', 'png-filename-display');
     
-        // 初期表示時にもメタデータを表示
-        fetchMetadata();
+        // JPGモーダル
+        var jpgCarousel = document.getElementById('jpgCarousel');
+        jpgCarousel.addEventListener('slid.bs.carousel', function () {
+            updateFilenameAndMetadata('jpgCarousel', 'jpg-filename-display');
+        });
+        updateFilenameAndMetadata('jpgCarousel', 'jpg-filename-display');
+    
+        // JPGスライドモーダル
+        var jpgCarousel2 = document.getElementById('jpgCarousel2');
+        jpgCarousel2.addEventListener('slid.bs.carousel', function () {
+            updateFilenameAndMetadata('jpgCarousel2', 'jpg-filename-display2');
+        });
+        updateFilenameAndMetadata('jpgCarousel2', 'jpg-filename-display2');
     });
     
-    function fetchMetadata() {
-        // CSRFトークンを取得
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        
-        // 現在表示されている画像の要素を取得
-        var activeImage = document.querySelector("#pngCarousel .carousel-item.active img");
-        
-        // 画像のURLからファイル名を取得
+    function updateFilenameAndMetadata(carouselId, filenameDisplayId) {
+        var carousel = document.getElementById(carouselId);
+        var activeImage = carousel.querySelector(".carousel-item.active img");
+        if (!activeImage) return;
+    
         var imagePath = activeImage.src;
         var filename = imagePath.substring(imagePath.lastIndexOf('/') + 1);
-        
-        // ファイル名をPOSTリクエストで送信
+    
+        // ファイル名を表示
+        document.getElementById(filenameDisplayId).textContent = filename;
+    
+        // メタデータの取得と表示（PNGモーダルのみ）
+        if (carouselId === 'pngCarousel') {
+            fetchMetadata(filename);
+        }
+    }
+    
+    function fetchMetadata(filename) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
         fetch('/get_metadata', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken  // CSRFトークンをヘッダーに追加
+                'X-CSRFToken': csrfToken
             },
-            body: JSON.stringify({ image_filename: filename })  // ファイル名を送信
+            body: JSON.stringify({ image_filename: filename })
         })
         .then(response => response.json())
         .then(data => {
