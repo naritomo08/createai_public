@@ -128,7 +128,7 @@ def ask_chatgpt(prompt):
             refined_prompt = ""
         else :
             # ChatGPTにプロンプトを送り、改良されたプロンプトを得る
-            response = openai.ChatCompletion.create(
+            response = openai.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": "You are a high-performance chatbot. Follow the rules below:\n\nRules:\n- Refine the illustration prompt to make it better.\n- Use the format '(element: weight), (element: weight), ...'.\n- Based on the current prompt, determine the situation more specifically.\n- Add, change, or remove elements as needed to fit the situation.\n- Adjust the number of elements to around 15.\n- Use English or Danbooru tags for elements.\n- Keep the number of words in each element to within 4.\n- Split elements if they are too long or unclear.\n- Move important elements to the front and less important phrases to the back.\n- Adjust the weight of elements between 0.5 and 1.3 to emphasize key aspects."},
@@ -137,7 +137,7 @@ def ask_chatgpt(prompt):
             )
 
             # 改良されたプロンプトを取得
-            refined_prompt = response.choices[0].message['content']
+            refined_prompt = response.choices[0].message.content
         
         return refined_prompt
 
