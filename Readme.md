@@ -4,7 +4,9 @@ flaskによる画像生成APIキックサイト
 
 ## サイト動作
 
-Web画面で枚数指定するとapp/output内に指定した枚数の画像が作成される。
+サイトに日本語指示を出して画像生成できるアプリも作成しました。
+
+タスク結果画面から画像入手できます。
 
 ## 事前作業
 
@@ -19,48 +21,6 @@ VAEは"XL_VAE_C(f1)"を入れてください。
 [animagineページ](https://civitai.com/models/260267/animagine-xl-v31)
 
 [VAEページ](https://civitai.com/models/152040/xlvaec)
-
-## 使用方法
-
-```bash
-git clone https://github.com/naritomo08/createai_public.git
-cd createapi_public
-rm -rf .git
-docker-compose up -d
-以下のURLでサイトアクセス
-http://localhost
-
-画像保管先
-app/static/output
-または結果画面からモーダル画像閲覧、入手可能
-
-画像生成ログ
-log_writer/output
-
-サイトアクセスログ
-nginx/nginx_logs
-```
-
-### ソース編集時の注意
-
-ソース編集のみでは反映されないため、必ず以下のコマンドを入れること。
-
-```bash
-docker-compose down
-docker-compose build
-docker-compose up -d
-```
-
-### タスクを止める方法
-
-タスクのリザルト画面または、すべてのタスク削除で
-タスクを止めることができます。
-
-## StableDiffusion日本語対応化
-
-サイトに日本語指示を出して画像生成できるアプリも作成しました。
-
-タスク結果画面から画像入手できます。
 
 ### 事前作業(Japanese対応版)
 
@@ -107,7 +67,20 @@ log_writer/output
 nginx/nginx_logs
 ```
 
-その他注意点は同じなので割愛します。
+### ソース編集時の注意
+
+ソース編集のみでは反映されないため、必ず以下のコマンドを入れること。
+
+```bash
+docker-compose down
+docker-compose build
+docker-compose up -d
+```
+
+### タスクを止める方法
+
+タスクのリザルト画面または、すべてのタスク削除で
+タスクを止めることができます。
 
 ## ユニットテスト仕様
 
