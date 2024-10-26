@@ -210,6 +210,14 @@
 
             const jpgCarousel = document.getElementById('jpgCarousel');
             new bootstrap.Carousel(jpgCarousel, { interval: false });
+
+            // スライドが切り替わったときにメタデータを更新
+            jpgCarousel.addEventListener('slid.bs.carousel', function () {
+                updateFilenameAndMetadata('jpgCarousel', 'jpg-filename-display');
+            });
+
+            // 初回のメタデータ表示を呼び出す
+            updateFilenameAndMetadata('jpgCarousel', 'jpg-filename-display');
         } catch (error) {
             alert("JPG画像の取得に失敗しました: " + error.message);
         }
@@ -243,6 +251,15 @@
 
             const jpgCarousel2 = document.getElementById('jpgCarousel2');
             new bootstrap.Carousel(jpgCarousel2, { interval: 2000 });
+
+            // スライドが切り替わったときにメタデータを更新
+            jpgCarousel2.addEventListener('slid.bs.carousel', function () {
+                updateFilenameAndMetadata('jpgCarousel2', 'jpg-filename-display2');
+            });
+
+            // 初回のメタデータ表示を呼び出す
+            updateFilenameAndMetadata('jpgCarousel2', 'jpg-filename-display2');
+
         })
         .catch(error => alert("JPG画像の取得に失敗しました: " + error.message));
     }
