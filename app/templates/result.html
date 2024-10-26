@@ -247,8 +247,7 @@
         const filename = imagePath.substring(imagePath.lastIndexOf('/') + 1);
         document.getElementById(filenameDisplayId).textContent = filename;
     
-        // 画像数が多いときは特定条件でのみメタデータを取得
-        if (carouselId === 'pngCarousel' && condition) { 
+        if (carouselId === 'pngCarousel') { 
             fetchMetadata(filename);
         }
     }
