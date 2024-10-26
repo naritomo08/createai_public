@@ -16,9 +16,15 @@
             <!-- 生成された画像 -->
             <h3 class="mt-4">生成された画像</h3>
             <div class="mt-2">
-                <button class="btn btn-success" onclick="showPngModal('{{ task_id }}')">View PNG</button>
-                <button class="btn btn-primary" onclick="showJpgModal('{{ task_id }}')">View JPG</button>
-                <button class="btn btn-primary" onclick="showJpgSlideModal('{{ task_id }}')">View JPG スライド</button>
+                {% if png_urls %}
+                    <button class="btn btn-success" onclick="showPngModal('{{ task_id }}')">View PNG</button>
+                {% endif %}
+                {% if jpg_urls %}
+                    <button class="btn btn-primary" onclick="showJpgModal('{{ task_id }}')">View JPG</button>
+                {% endif %}
+                {% if jpg_urls %}
+                    <button class="btn btn-primary" onclick="showJpgSlideModal('{{ task_id }}')">View JPG スライド</button>
+                {% endif %}
             </div>
 
             <div class="mt-4">
@@ -233,16 +239,16 @@
         const carousel = document.getElementById(carouselId);
         const activeImage = carousel.querySelector(".carousel-item.active img");
     
-        // data-srcからsrcに画像を設定し、遅延ロードを実現
         if (activeImage && !activeImage.src) {
-            activeImage.src = activeImage.getAttribute('data-src');
+            activeImage.src = activeImage.getAttribute('data-src'); // 必要なときのみロード
         }
     
         const imagePath = activeImage.src;
         const filename = imagePath.substring(imagePath.lastIndexOf('/') + 1);
         document.getElementById(filenameDisplayId).textContent = filename;
     
-        if (carouselId === 'pngCarousel') {
+        // 画像数が多いときは特定条件でのみメタデータを取得
+        if (carouselId === 'pngCarousel' && condition) { 
             fetchMetadata(filename);
         }
     }
