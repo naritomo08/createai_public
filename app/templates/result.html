@@ -153,7 +153,7 @@
             data.png_urls.forEach((url, index) => {
                 const item = document.createElement('div');
                 item.className = `carousel-item ${index === 0 ? 'active' : ''}`;
-                item.innerHTML = `<img src="${url}" class="d-block w-100" alt="PNG Image">`;
+                item.innerHTML = `<img data-src="${url}" class="d-block w-100" alt="PNG Image">`;
                 carouselContent.appendChild(item);
             });
 
@@ -166,19 +166,17 @@
             const pngCarousel = document.getElementById('pngCarousel');
             new bootstrap.Carousel(pngCarousel, { interval: false });
 
-            // スライドが切り替わったときにメタデータを更新
             pngCarousel.addEventListener('slid.bs.carousel', function () {
                 updateFilenameAndMetadata('pngCarousel', 'png-filename-display');
             });
 
-            // 初回のメタデータ表示を呼び出す
             updateFilenameAndMetadata('pngCarousel', 'png-filename-display');
         } catch (error) {
             alert("PNG画像の取得に失敗しました: " + error.message);
         }
     }
 
-    async function showJpgModal(task_id) {
+    async function setupCarouselModal(task_id, modalId, carouselId, carouselContentId, filenameDisplayId, slideInterval = false) {
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             const response = await fetch('/api/get_jpg_urls', {
@@ -191,89 +189,59 @@
             });
             const data = await response.json();
             if (!data.jpg_urls) throw new Error('JPG画像が見つかりません');
-
-            const carouselContent = document.getElementById('jpg-carousel-content');
+    
+            const carouselContent = document.getElementById(carouselContentId);
             carouselContent.innerHTML = '';
-
+    
             data.jpg_urls.forEach((url, index) => {
                 const item = document.createElement('div');
                 item.className = `carousel-item ${index === 0 ? 'active' : ''}`;
-                item.innerHTML = `<img src="${url}" class="d-block w-100" alt="JPG Image">`;
+                item.innerHTML = `<img data-src="${url}" class="d-block w-100" alt="JPG Image">`;
                 carouselContent.appendChild(item);
             });
-
+    
             const downloadJpgZip = document.getElementById('downloadJpgZip');
             downloadJpgZip.style.display = data.status === 'completed' ? 'block' : 'none';
             downloadJpgZip.href = `/download_jpg_zip/${task_id}`;
-
-            new bootstrap.Modal(document.getElementById('jpgModal')).show();
-
-            const jpgCarousel = document.getElementById('jpgCarousel');
-            new bootstrap.Carousel(jpgCarousel, { interval: false });
-
+    
+            new bootstrap.Modal(document.getElementById(modalId)).show();
+    
+            const carousel = document.getElementById(carouselId);
+            new bootstrap.Carousel(carousel, { interval: slideInterval });
+    
             // スライドが切り替わったときにメタデータを更新
-            jpgCarousel.addEventListener('slid.bs.carousel', function () {
-                updateFilenameAndMetadata('jpgCarousel', 'jpg-filename-display');
+            carousel.addEventListener('slid.bs.carousel', function () {
+                updateFilenameAndMetadata(carouselId, filenameDisplayId);
             });
-
+    
             // 初回のメタデータ表示を呼び出す
-            updateFilenameAndMetadata('jpgCarousel', 'jpg-filename-display');
+            updateFilenameAndMetadata(carouselId, filenameDisplayId);
         } catch (error) {
-            alert("JPG画像の取得に失敗しました: " + error.message);
+            alert("画像の取得に失敗しました: " + error.message);
         }
     }
-
+    
+    function showJpgModal(task_id) {
+        setupCarouselModal(task_id, 'jpgModal', 'jpgCarousel', 'jpg-carousel-content', 'jpg-filename-display', false);
+    }
+    
     function showJpgSlideModal(task_id) {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        fetch('/api/get_jpg_urls', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({ task_id: task_id })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (!data.jpg_urls) throw new Error('JPG画像が見つかりません');
-
-            const carouselContent = document.getElementById('jpg-carousel-content2');
-            carouselContent.innerHTML = '';
-
-            data.jpg_urls.forEach((url, index) => {
-                const item = document.createElement('div');
-                item.className = `carousel-item ${index === 0 ? 'active' : ''}`;
-                item.innerHTML = `<img src="${url}" class="d-block w-100" alt="JPG Image">`;
-                carouselContent.appendChild(item);
-            });
-
-            new bootstrap.Modal(document.getElementById('jpgModal2')).show();
-
-            const jpgCarousel2 = document.getElementById('jpgCarousel2');
-            new bootstrap.Carousel(jpgCarousel2, { interval: 2000 });
-
-            // スライドが切り替わったときにメタデータを更新
-            jpgCarousel2.addEventListener('slid.bs.carousel', function () {
-                updateFilenameAndMetadata('jpgCarousel2', 'jpg-filename-display2');
-            });
-
-            // 初回のメタデータ表示を呼び出す
-            updateFilenameAndMetadata('jpgCarousel2', 'jpg-filename-display2');
-
-        })
-        .catch(error => alert("JPG画像の取得に失敗しました: " + error.message));
+        setupCarouselModal(task_id, 'jpgModal2', 'jpgCarousel2', 'jpg-carousel-content2', 'jpg-filename-display2', 2000);
     }
 
     function updateFilenameAndMetadata(carouselId, filenameDisplayId) {
         const carousel = document.getElementById(carouselId);
         const activeImage = carousel.querySelector(".carousel-item.active img");
-        if (!activeImage) return;
+    
+        // data-srcからsrcに画像を設定し、遅延ロードを実現
+        if (activeImage && !activeImage.src) {
+            activeImage.src = activeImage.getAttribute('data-src');
+        }
     
         const imagePath = activeImage.src;
         const filename = imagePath.substring(imagePath.lastIndexOf('/') + 1);
         document.getElementById(filenameDisplayId).textContent = filename;
     
-        // PNGモーダルのときにのみメタデータを取得して表示
         if (carouselId === 'pngCarousel') {
             fetchMetadata(filename);
         }
