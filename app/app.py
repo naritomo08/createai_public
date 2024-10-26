@@ -479,6 +479,42 @@ def show_task_result():
 
     return render_template('result.html', **result_data)
 
+@app.route('/api/get_png_urls', methods=['POST'])
+def get_png_urls():
+    task_id = request.json.get('task_id')
+    if not task_id:
+        return jsonify({"error": "No task ID provided"}), 400
+
+    # RedisからPNG画像のパスを取得
+    image_filepaths = redis_client.lrange(f"task_result:{task_id}:image_filepaths", 0, -1)
+    png_urls = []
+
+    for filepath in image_filepaths:
+        filepath = filepath.decode('utf-8')
+        if filepath.endswith('.png'):
+            filename = os.path.basename(filepath)
+            png_urls.append(url_for('static', filename=f'output/png/{filename}'))
+
+    return jsonify({"png_urls": png_urls, "status": redis_client.hget(f"task_params:{task_id}", "status").decode('utf-8')})
+
+@app.route('/api/get_jpg_urls', methods=['POST'])
+def get_jpg_urls():
+    task_id = request.json.get('task_id')
+    if not task_id:
+        return jsonify({"error": "No task ID provided"}), 400
+
+    # RedisからJPG画像のパスを取得
+    image_filepaths = redis_client.lrange(f"task_result:{task_id}:image_filepaths", 0, -1)
+    jpg_urls = []
+
+    for filepath in image_filepaths:
+        filepath = filepath.decode('utf-8')
+        if filepath.endswith('.jpg'):
+            filename = os.path.basename(filepath)
+            jpg_urls.append(url_for('static', filename=f'output/jpg/{filename}'))
+
+    return jsonify({"jpg_urls": jpg_urls, "status": redis_client.hget(f"task_params:{task_id}", "status").decode('utf-8')})
+
 @app.route('/cancel_task', methods=['POST'])
 def cancel_task():
     try:
@@ -743,4 +779,4 @@ def show_400_page(error):
 
 if __name__ == '__main__':
     # Flaskアプリを実行
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=3100, debug=False)
