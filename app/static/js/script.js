@@ -132,6 +132,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    document.getElementById('myForm').addEventListener('submit', function(event) {
+        updateCSRFToken();
+    });
+
     fetchTasks();
     setInterval(fetchTasks, 5000); // 5秒ごとにタスク情報を更新
 });
@@ -342,5 +346,18 @@ function confirmDeleteTasks() {
             }
         })
         .catch(error => alert('エラーが発生しました: ' + error));
+    }
+}
+
+async function updateCSRFToken() {
+    try {
+        const response = await fetch('/get_csrf_token');
+        const data = await response.json();
+        const csrfInput = document.querySelector('input[name="csrf_token"]');
+        if (csrfInput) {
+            csrfInput.value = data.csrf_token;
+        }
+    } catch (error) {
+        console.error('CSRFトークンの取得に失敗しました:', error);
     }
 }
