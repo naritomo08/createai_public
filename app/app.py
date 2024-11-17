@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 import pytz
 import json
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 import os
 import openai
 import zipfile
@@ -759,6 +759,10 @@ def get_metadata():
         return jsonify(metadata)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/get_csrf_token', methods=['GET'])
+def get_csrf_token():
+    return jsonify({'csrf_token': generate_csrf()})
 
 # エラーハンドリング
 
