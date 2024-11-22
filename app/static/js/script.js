@@ -280,6 +280,23 @@ function confirmDeleteTasks() {
     }
 }
 
+// CSRFトークン更新関数
+async function updateCSRFToken() {
+    try {
+        const response = await fetch('/get_csrf_token');
+        if (!response.ok) throw new Error('CSRFトークン取得失敗');
+        const data = await response.json();
+        const csrfToken = data.csrf_token;
+
+        document.querySelectorAll('input[name="csrf_token"]').forEach(input => {
+            input.value = csrfToken;
+        });
+    } catch (error) {
+        console.error('CSRFトークンの更新失敗:', error);
+        throw error;
+    }
+}
+
 async function showPngModal(task_id) {
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
