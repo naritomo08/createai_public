@@ -86,20 +86,9 @@ function setupFormSubmission() {
     document.getElementById('myForm').addEventListener('submit', async function (event) {
         event.preventDefault();
 
-        const promptSelect = document.getElementById('promptselect');
-        const errorMessage = document.getElementById('promptselect-error');
-
         try {
             await updateCSRFToken(); // CSRFトークンの更新
-
-            if (promptSelect.value === '') {
-                promptSelect.classList.add('error');
-                errorMessage.style.display = 'block';
-            } else {
-                promptSelect.classList.remove('error');
-                errorMessage.style.display = 'none';
-                this.submit(); // フォーム送信
-            }
+            this.submit(); // フォーム送信
         } catch (error) {
             console.error('CSRFトークン更新中にエラー:', error);
             alert('エラーが発生しました。後でもう一度試してください。');
