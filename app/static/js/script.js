@@ -113,9 +113,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    document.getElementById('myForm').addEventListener('submit', function(event) {
-        updateCSRFToken();
+    document.getElementById('myForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        try {
+            await updateCSRFToken(); // CSRFトークンを更新
+        } catch (error) {
+            console.error('CSRFトークン更新中にエラー:', error);
+            alert('エラーが発生しました。後でもう一度試してください。');
+        }
     });
+
+    // CSRFトークン更新関数
+    async function updateCSRFToken() {
+        try {
+            const response = await fetch('/get_csrf_token');
+            if (!response.ok) throw new Error('CSRFトークン取得失敗');
+            const data = await response.json();
+            const csrfToken = data.csrf_token;
+
+            document.querySelectorAll('input[name="csrf_token"]').forEach(input => {
+                input.value = csrfToken;
+            });
+        } catch (error) {
+            console.error('CSRFトークンの更新失敗:', error);
+            throw error;
+        }
+    }
 
     fetchTasks();
     setInterval(fetchTasks, 5000); // 5秒ごとにタスク情報を更新
@@ -327,18 +351,5 @@ function confirmDeleteTasks() {
             }
         })
         .catch(error => alert('エラーが発生しました: ' + error));
-    }
-}
-
-async function updateCSRFToken() {
-    try {
-        const response = await fetch('/get_csrf_token');
-        const data = await response.json();
-        const csrfInput = document.querySelector('input[name="csrf_token"]');
-        if (csrfInput) {
-            csrfInput.value = data.csrf_token;
-        }
-    } catch (error) {
-        console.error('CSRFトークンの取得に失敗しました:', error);
     }
 }
