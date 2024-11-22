@@ -1,4 +1,13 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
+    initializeParameters(); // フィールドとローカルストレージの初期化
+    initializeDisplay(); // 画面表示の初期化
+    initializeEventListeners(); // イベントリスナーの初期化
+    setupFormSubmission(); // フォーム送信処理の初期化
+    startTaskFetching(); // タスク取得処理の定期実行
+});
+
+// ローカルストレージとフィールド初期化
+function initializeParameters() {
     let parameters = null;
     try {
         parameters = JSON.parse(localStorage.getItem('parameters'));
@@ -7,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (parameters) {
-        // フィールドとデフォルト値のマッピング
         const fields = {
             'sd_url': '',
             'promptinput': '',
@@ -26,7 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
             'timeout': 300
         };
 
-        // 各フィールドに対して値を設定
         for (const [fieldId, defaultValue] of Object.entries(fields)) {
             const element = document.getElementById(fieldId);
             if (element) {
@@ -35,134 +42,81 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // localStorageをクリア
-    localStorage.removeItem('parameters');
+    localStorage.removeItem('parameters'); // データをクリア
+}
 
-    // 初期化処理
-    function initializeDisplay() {
-
-        // hresの初期化
-        var hresDiv = document.getElementById('hresDiv');
-        var hresChecked = document.getElementById('hres').checked;
-        if (hresChecked) {
-            hresDiv.style.display = 'block';
-        } else {
-            hresDiv.style.display = 'none';
-        }
-
-        // gazousizeの初期化
-        var gazouDiv = document.getElementById('gazouDiv');
-        var gazousizeValue = document.getElementById('gazousize').value;
-        if (gazousizeValue == '3') {
-            gazouDiv.style.display = 'block';
-        } else {
-            gazouDiv.style.display = 'none';
-        }
-
-        // samplerの初期化
-        var samplerDiv = document.getElementById('samplerDiv');
-        var samplerValue = document.getElementById('sampler').value;
-        if (samplerValue == '2') {
-            samplerDiv.style.display = 'block';
-        } else {
-            samplerDiv.style.display = 'none';
-        }
-
-        // exconfの初期化
-        var exconfDiv = document.getElementById('exconfDiv');
-        var exconfChecked = document.getElementById('exconf').checked;
-        if (exconfChecked) {
-            exconfDiv.style.display = 'block';
-        } else {
-            exconfDiv.style.display = 'none';
-        }
-
-        // topnameの初期化
-        var topnameDiv = document.getElementById('topnameDiv');
-        var topnameselectValue = document.getElementById('topnameselect').value;
-        if (topnameselectValue == '1') {
-            topnameDiv.style.display = 'block';
-        } else {
-            topnameDiv.style.display = 'none';
-        }
+// 画面表示の初期化
+function initializeDisplay() {
+    // 要素の表示・非表示を切り替える関数
+    function toggleDisplay(elementId, condition) {
+        var element = document.getElementById(elementId);
+        element.style.display = condition ? 'block' : 'none';
     }
 
-    // ページロード時に初期化
-    initializeDisplay();
+    // 表示・非表示の初期化
+    toggleDisplay('hresDiv', document.getElementById('hres').checked);
+    toggleDisplay('gazouDiv', document.getElementById('gazousize').value === '3');
+    toggleDisplay('samplerDiv', document.getElementById('sampler').value === '2');
+    toggleDisplay('exconfDiv', document.getElementById('exconf').checked);
+    toggleDisplay('topnameDiv', document.getElementById('topnameselect').value === '1');
+}
 
-    // イベントリスナー
-    document.getElementById('hres').addEventListener('change', function() {
-        var hresDiv = document.getElementById('hresDiv');
-        if (this.checked) {
-            hresDiv.style.display = 'block';
-        } else {
-            hresDiv.style.display = 'none';
-        }
-    });
-    document.getElementById('gazousize').addEventListener('change', function() {
-        var gazouDiv = document.getElementById('gazouDiv');
-        if (this.value == '3') {
-            gazouDiv.style.display = 'block';
-        } else {
-            gazouDiv.style.display = 'none';
-        }
-    });
-    document.getElementById('sampler').addEventListener('change', function() {
-        var samplerDiv = document.getElementById('samplerDiv');
-        if (this.value == '2') {
-            samplerDiv.style.display = 'block';
-        } else {
-            samplerDiv.style.display = 'none';
-        }
-    });
-    document.getElementById('exconf').addEventListener('change', function() {
-        var exconfDiv = document.getElementById('exconfDiv');
-        if (this.checked) {
-            exconfDiv.style.display = 'block';
-        } else {
-            exconfDiv.style.display = 'none';
-        }
-    });
-    document.getElementById('topnameselect').addEventListener('change', function() {
-        var topnameDiv = document.getElementById('topnameDiv');
-        if (this.value == '1') {
-            topnameDiv.style.display = 'block';
-        } else {
-            topnameDiv.style.display = 'none';
-        }
-    });
+// イベントリスナーの初期化
+function initializeEventListeners() {
+    // 共通化されたイベントハンドラ
+    function handleChange(event, elementId, conditionFn) {
+        var element = document.getElementById(elementId);
+        element.style.display = conditionFn(event) ? 'block' : 'none';
+    }
 
+    // 動的なリスナー登録データ
+    const listeners = [
+        { id: 'hres', targetId: 'hresDiv', condition: e => e.target.checked },
+        { id: 'gazousize', targetId: 'gazouDiv', condition: e => e.target.value === '3' },
+        { id: 'sampler', targetId: 'samplerDiv', condition: e => e.target.value === '2' },
+        { id: 'exconf', targetId: 'exconfDiv', condition: e => e.target.checked },
+        { id: 'topnameselect', targetId: 'topnameDiv', condition: e => e.target.value === '1' },
+    ];
+
+    // リスナーの登録
+    listeners.forEach(listener => {
+        document.getElementById(listener.id).addEventListener('change', function(event) {
+            handleChange(event, listener.targetId, listener.condition);
+        });
+    });
+}
+
+// フォーム送信処理
+function setupFormSubmission() {
     document.getElementById('myForm').addEventListener('submit', async function (event) {
         event.preventDefault();
 
+        const promptSelect = document.getElementById('promptselect');
+        const errorMessage = document.getElementById('promptselect-error');
+
         try {
-            await updateCSRFToken(); // CSRFトークンを更新
+            await updateCSRFToken(); // CSRFトークンの更新
+
+            if (promptSelect.value === '') {
+                promptSelect.classList.add('error');
+                errorMessage.style.display = 'block';
+            } else {
+                promptSelect.classList.remove('error');
+                errorMessage.style.display = 'none';
+                this.submit(); // フォーム送信
+            }
         } catch (error) {
             console.error('CSRFトークン更新中にエラー:', error);
             alert('エラーが発生しました。後でもう一度試してください。');
         }
     });
+}
 
-    // CSRFトークン更新関数
-    async function updateCSRFToken() {
-        try {
-            const response = await fetch('/get_csrf_token');
-            if (!response.ok) throw new Error('CSRFトークン取得失敗');
-            const data = await response.json();
-            const csrfToken = data.csrf_token;
-
-            document.querySelectorAll('input[name="csrf_token"]').forEach(input => {
-                input.value = csrfToken;
-            });
-        } catch (error) {
-            console.error('CSRFトークンの更新失敗:', error);
-            throw error;
-        }
-    }
-
+// タスク取得処理を定期実行
+function startTaskFetching() {
     fetchTasks();
-    setInterval(fetchTasks, 5000); // 5秒ごとにタスク情報を更新
-});
+    setInterval(fetchTasks, 5000); // 5秒ごとに更新
+}
 
 function clearPromptInput() {
     document.getElementById('promptinput').value = '';
@@ -230,6 +184,59 @@ function reflectToTop(parameters) {
 
 function fetchTasks() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // タスク行を作成するヘルパー関数
+    function createTaskRow(task, tableBody) {
+        const tr = document.createElement('tr');
+
+        const taskIdCell = document.createElement('td');
+        const form = document.createElement('form');
+        form.id = `form-${task.id}`;
+        form.action = '/task_result';
+        form.method = 'post';
+        form.style.display = 'none';
+
+        // CSRFトークンをフォームに追加
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'task_id';
+        input.value = task.id;
+        form.appendChild(input);
+
+        const link = document.createElement('a');
+        link.href = '#';
+        link.onclick = () => form.submit();
+        link.textContent = task.id;
+
+        taskIdCell.appendChild(form);
+        taskIdCell.appendChild(link);
+        tr.appendChild(taskIdCell);
+
+        const statusCell = document.createElement('td');
+        statusCell.textContent = task.status;
+        tr.appendChild(statusCell);
+
+        const createdAtCell = document.createElement('td');
+        createdAtCell.textContent = task.created_at;
+        tr.appendChild(createdAtCell);
+
+        const startTimeCell = document.createElement('td');
+        startTimeCell.textContent = task.start_time;
+        tr.appendChild(startTimeCell);
+
+        const endTimeCell = document.createElement('td');
+        endTimeCell.textContent = task.end_time;
+        tr.appendChild(endTimeCell);
+
+        tableBody.appendChild(tr);
+    }
+
     fetch('/tasks', {
         method: 'GET',
         headers: {
@@ -241,110 +248,15 @@ function fetchTasks() {
             const processingTasksTableBody = document.getElementById('processingTasksTableBody');
             const completedTasksTableBody = document.getElementById('completedTasksTableBody');
 
+            // テーブルの内容をリセット
             processingTasksTableBody.innerHTML = '';
             completedTasksTableBody.innerHTML = '';
 
-            data.processing_tasks.forEach(task => {
-                const tr = document.createElement('tr');
+            // 処理中タスクを作成
+            data.processing_tasks.forEach(task => createTaskRow(task, processingTasksTableBody));
 
-                const taskIdCell = document.createElement('td');
-                const form = document.createElement('form');
-                form.id = `form-${task.id}`;
-                form.action = '/task_result';
-                form.method = 'post';
-                form.style.display = 'none';
-
-                // CSRFトークンをフォームに追加
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrf_token';
-                csrfInput.value = csrfToken; // CSRFトークンをセット
-                form.appendChild(csrfInput);
-
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'task_id';
-                input.value = task.id;
-                form.appendChild(input);
-
-                const link = document.createElement('a');
-                link.href = '#';
-                link.onclick = () => form.submit();
-                link.textContent = task.id;
-
-                taskIdCell.appendChild(form);
-                taskIdCell.appendChild(link);
-                tr.appendChild(taskIdCell);
-
-                const statusCell = document.createElement('td');
-                statusCell.textContent = task.status;
-                tr.appendChild(statusCell);
-
-                const createdAtCell = document.createElement('td');
-                createdAtCell.textContent = task.created_at;
-                tr.appendChild(createdAtCell);
-
-                const startTimeCell = document.createElement('td');
-                startTimeCell.textContent = task.start_time;
-                tr.appendChild(startTimeCell);
-
-                const endTimeCell = document.createElement('td');
-                endTimeCell.textContent = task.end_time;
-                tr.appendChild(endTimeCell);
-
-                processingTasksTableBody.appendChild(tr);
-            });
-
-            data.completed_tasks.forEach(task => {
-                const tr = document.createElement('tr');
-
-                const taskIdCell = document.createElement('td');
-                const form = document.createElement('form');
-                form.id = `form-${task.id}`;
-                form.action = '/task_result';
-                form.method = 'post';
-                form.style.display = 'none';
-
-                // CSRFトークンをフォームに追加
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrf_token';
-                csrfInput.value = csrfToken; // CSRFトークンをセット
-                form.appendChild(csrfInput);
-
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'task_id';
-                input.value = task.id;
-                form.appendChild(input);
-
-                const link = document.createElement('a');
-                link.href = '#';
-                link.onclick = () => form.submit();
-                link.textContent = task.id;
-
-                taskIdCell.appendChild(form);
-                taskIdCell.appendChild(link);
-                tr.appendChild(taskIdCell);
-
-                const statusCell = document.createElement('td');
-                statusCell.textContent = task.status;
-                tr.appendChild(statusCell);
-
-                const createdAtCell = document.createElement('td');
-                createdAtCell.textContent = task.created_at;
-                tr.appendChild(createdAtCell);
-
-                const startTimeCell = document.createElement('td');
-                startTimeCell.textContent = task.start_time;
-                tr.appendChild(startTimeCell);
-
-                const endTimeCell = document.createElement('td');
-                endTimeCell.textContent = task.end_time;
-                tr.appendChild(endTimeCell);
-
-                completedTasksTableBody.appendChild(tr);
-            });
+            // 完了タスクを作成
+            data.completed_tasks.forEach(task => createTaskRow(task, completedTasksTableBody));
         })
         .catch(error => console.error('Error fetching tasks:', error));
 }
@@ -370,6 +282,23 @@ function confirmDeleteTasks() {
             }
         })
         .catch(error => alert('エラーが発生しました: ' + error));
+    }
+}
+
+// CSRFトークン更新関数
+async function updateCSRFToken() {
+    try {
+        const response = await fetch('/get_csrf_token');
+        if (!response.ok) throw new Error('CSRFトークン取得失敗');
+        const data = await response.json();
+        const csrfToken = data.csrf_token;
+
+        document.querySelectorAll('input[name="csrf_token"]').forEach(input => {
+            input.value = csrfToken;
+        });
+    } catch (error) {
+        console.error('CSRFトークンの更新失敗:', error);
+        throw error;
     }
 }
 
