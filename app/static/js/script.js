@@ -166,7 +166,8 @@ function reflectToTop(parameters) {
     window.location.href = '/';
 }
 
-function fetchTasks() {
+async function fetchTasks() {
+    await updateCSRFToken();
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     // タスク行を作成するヘルパー関数
@@ -245,7 +246,8 @@ function fetchTasks() {
         .catch(error => console.error('Error fetching tasks:', error));
 }
 
-function confirmDeleteTasks() {
+async function confirmDeleteTasks() {
+    await updateCSRFToken();
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     if (confirm('本当にすべてのタスクを削除しますか？この操作は取り消せません。')) {
         fetch('/delete_all_tasks', {
@@ -277,6 +279,12 @@ async function updateCSRFToken() {
         const data = await response.json();
         const csrfToken = data.csrf_token;
 
+        // <meta>タグや他の場所にトークンを反映
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag) {
+            metaTag.setAttribute('content', csrfToken);
+        }
+
         document.querySelectorAll('input[name="csrf_token"]').forEach(input => {
             input.value = csrfToken;
         });
@@ -288,6 +296,7 @@ async function updateCSRFToken() {
 
 async function showPngModal(task_id) {
     try {
+        await updateCSRFToken();
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         const response = await fetch('/api/get_png_urls', {
             method: 'POST',
@@ -331,6 +340,7 @@ async function showPngModal(task_id) {
 
 async function setupCarouselModal(task_id, modalId, carouselId, carouselContentId, filenameDisplayId, slideInterval = false) {
     try {
+        await updateCSRFToken();
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         const response = await fetch('/api/get_jpg_urls', {
             method: 'POST',
@@ -399,7 +409,8 @@ function updateFilenameAndMetadata(carouselId, filenameDisplayId) {
     }
 }
 
-function fetchMetadata(filename) {
+async function fetchMetadata(filename) {
+    await updateCSRFToken();
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     fetch('/get_metadata', {
