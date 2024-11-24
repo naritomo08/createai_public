@@ -17,7 +17,17 @@ function initializeParameters() {
     if (parameters) {
         const fields = {
             'sd_url': '',
+            'charachange': 2,
+            'charaselect': 100,
+            'styleselect': 2,
+            'styleselect2': 0,
+            'modelchange': 2,
+            'modelselect': 7,
+            'promptselect': 100,
             'promptinput': '',
+            'promptex': 0,
+            'promptinput2': '',
+            'negativeex': 0,
             'negativeinput': '',
             'gazousize': 1,
             'gazouselect': 2,
@@ -30,7 +40,10 @@ function initializeParameters() {
             'isyouon': 1,
             'topnameselect': 0,
             'topnamein': '',
-            'timeout': 300
+            'timeout': 90,
+            'isyousel': 7,
+            'japansel': 0,
+            'promptj': ''
         };
 
         for (const [fieldId, defaultValue] of Object.entries(fields)) {
@@ -53,11 +66,28 @@ function initializeDisplay() {
     }
 
     // 表示・非表示の初期化
+    toggleDisplay('charaDiv', document.getElementById('charachange').value === '2');
+    toggleDisplay('modelDiv', document.getElementById('modelchange').value === '2');
+    toggleDisplay('promptinputDiv', document.getElementById('promptselect').value === '100');
     toggleDisplay('hresDiv', document.getElementById('hres').checked);
+    toggleDisplay('styleDiv', document.getElementById('styleselect').value === '2');
     toggleDisplay('gazouDiv', document.getElementById('gazousize').value === '3');
+    toggleDisplay('negativeDiv', document.getElementById('negativeex').value === '1');
+    toggleDisplay('promptexDiv', document.getElementById('promptex').value === '1');
     toggleDisplay('samplerDiv', document.getElementById('sampler').value === '2');
     toggleDisplay('exconfDiv', document.getElementById('exconf').checked);
     toggleDisplay('topnameDiv', document.getElementById('topnameselect').value === '1');
+    toggleDisplay('isyouDiv', document.getElementById('isyouon').value === '4');
+    toggleDisplay('promptjDiv', document.getElementById('japansel').value === '1');
+
+    // 特殊な処理が必要な部分
+    var secretChecked = document.getElementById('secret').checked;
+    var promptselect = document.getElementById('promptselect');
+    if (secretChecked) {
+        addSecretOptions(promptselect);
+    } else {
+        removeSecretOptions(promptselect);
+    }
 }
 
 // イベントリスナーの初期化
@@ -70,11 +100,19 @@ function initializeEventListeners() {
 
     // 動的なリスナー登録データ
     const listeners = [
+        { id: 'charachange', targetId: 'charaDiv', condition: e => e.target.value === '2' },
+        { id: 'modelchange', targetId: 'modelDiv', condition: e => e.target.value === '2' },
+        { id: 'promptselect', targetId: 'promptinputDiv', condition: e => e.target.value === '100' },
         { id: 'hres', targetId: 'hresDiv', condition: e => e.target.checked },
+        { id: 'styleselect', targetId: 'styleDiv', condition: e => e.target.value === '2' },
         { id: 'gazousize', targetId: 'gazouDiv', condition: e => e.target.value === '3' },
+        { id: 'negativeex', targetId: 'negativeDiv', condition: e => e.target.value === '1' },
+        { id: 'promptex', targetId: 'promptexDiv', condition: e => e.target.value === '1' },
         { id: 'sampler', targetId: 'samplerDiv', condition: e => e.target.value === '2' },
         { id: 'exconf', targetId: 'exconfDiv', condition: e => e.target.checked },
         { id: 'topnameselect', targetId: 'topnameDiv', condition: e => e.target.value === '1' },
+        { id: 'isyouon', targetId: 'isyouDiv', condition: e => e.target.value === '4' },
+        { id: 'japansel', targetId: 'promptjDiv', condition: e => e.target.value === '1' },
     ];
 
     // リスナーの登録
@@ -82,6 +120,16 @@ function initializeEventListeners() {
         document.getElementById(listener.id).addEventListener('change', function(event) {
             handleChange(event, listener.targetId, listener.condition);
         });
+    });
+
+    // 特殊な処理が必要な部分
+    document.getElementById('secret').addEventListener('change', function() {
+        var promptselect = document.getElementById('promptselect');
+        if (this.checked) {
+            addSecretOptions(promptselect);
+        } else {
+            removeSecretOptions(promptselect);
+        }
     });
 }
 
@@ -97,6 +145,14 @@ function clearPromptInput() {
 
 function clearPromptInput2() {
     document.getElementById('negativeinput').value = '';
+}
+
+function clearPromptInput3() {
+    document.getElementById('promptinput2').value = '';
+}
+
+function clearPromptInput4() {
+    document.getElementById('promptj').value = '';
 }
 
 function copyToClipboard(text) {
@@ -135,6 +191,55 @@ function copyPromptInput2() {
     if (negativeInput) {
         copyToClipboard(negativeInput.value);
     }
+}
+
+function copyPromptInput3() {
+    const promptInput2 = document.getElementById('promptinput2');
+    if (promptInput2) {
+        copyToClipboard(promptInput2.value);
+    }
+}
+
+function copyPromptInput4() {
+    const promptj = document.getElementById('promptj');
+    if (promptj) {
+        copyToClipboard(promptj.value);
+    }
+}
+
+function addSecretOptions(selectElement) {
+    var options = [
+        {value: '101', text: '101.R18 random'},
+        {value: '102', text: '102.R18 順序(20)'},
+        {value: '1', text: '1.R18 初期ポーズ'},
+        {value: '2', text: '2.R18 触手'},
+        {value: '3', text: '3.R18 立ちポーズ'},
+        {value: '4', text: '4.R18 足開き'},
+        {value: '5', text: '5.R18 フェラ'},
+        {value: '6', text: '6.R18 機械姦'},
+        {value: '7', text: '7.R18 M字開脚'},
+        {value: '8', text: '8.R18 さんぽ'},
+        {value: '9', text: '9.手縛りギャグボール'},
+        {value: '10', text: '10.ハードプレイ'},
+        {value: '11', text: '11.GangbangGen'},
+        {value: '12', text: '12.四つん這い'},
+        {value: '13', text: '13.M字拘束'},
+        {value: '14', text: '14.抱えあげ'},
+        {value: '15', text: '15.白仮面Rinkan'},
+        {value: '16', text: '16.M字アヘ搾乳ふたなり'},
+        {value: '17', text: '17.RINKAN'},
+        {value: '18', text: '18.磔'},
+        {value: '19', text: '19.体操'},
+        // {value: '19', text: '19.くぱぁプレイ'},
+        {value: '20', text: '20.チン媚びダンス'},
+    ];
+    options.forEach(function(optionData) {
+        var option = document.createElement('option');
+        option.value = optionData.value;
+        option.text = optionData.text;
+        option.classList.add('secret-option');
+        selectElement.appendChild(option);
+    });
 }
 
 function removeSecretOptions(selectElement) {
