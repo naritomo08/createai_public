@@ -172,8 +172,7 @@ function reflectToTop(parameters) {
 }
 
 async function fetchTasks() {
-    await updateCSRFToken();
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const csrfToken = await updateCSRFToken();
 
     // タスク行を作成するヘルパー関数
     function createTaskRow(task, tableBody) {
@@ -252,8 +251,7 @@ async function fetchTasks() {
 }
 
 async function confirmDeleteTasks() {
-    await updateCSRFToken();
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const csrfToken = await updateCSRFToken();
     if (confirm('本当にすべてのタスクを削除しますか？この操作は取り消せません。')) {
         fetch('/delete_all_tasks', {
             method: 'POST',
@@ -284,15 +282,10 @@ async function updateCSRFToken() {
         const data = await response.json();
         const csrfToken = data.csrf_token;
 
-        // <meta>タグや他の場所にトークンを反映
-        const metaTag = document.querySelector('meta[name="csrf-token"]');
-        if (metaTag) {
-            metaTag.setAttribute('content', csrfToken);
-        }
-
         document.querySelectorAll('input[name="csrf_token"]').forEach(input => {
             input.value = csrfToken;
         });
+        return csrfToken;
     } catch (error) {
         console.error('CSRFトークンの更新失敗:', error);
         throw error;
@@ -301,8 +294,7 @@ async function updateCSRFToken() {
 
 async function showPngModal(task_id) {
     try {
-        await updateCSRFToken();
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const csrfToken = await updateCSRFToken();
         const response = await fetch('/api/get_png_urls', {
             method: 'POST',
             headers: {
@@ -345,8 +337,7 @@ async function showPngModal(task_id) {
 
 async function setupCarouselModal(task_id, modalId, carouselId, carouselContentId, filenameDisplayId, slideInterval = false) {
     try {
-        await updateCSRFToken();
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const csrfToken = await updateCSRFToken();
         const response = await fetch('/api/get_jpg_urls', {
             method: 'POST',
             headers: {
@@ -415,8 +406,7 @@ function updateFilenameAndMetadata(carouselId, filenameDisplayId) {
 }
 
 async function fetchMetadata(filename) {
-    await updateCSRFToken();
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const csrfToken = await updateCSRFToken();
 
     fetch('/get_metadata', {
         method: 'POST',
