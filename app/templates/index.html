@@ -5,7 +5,7 @@
         <div class="row justify-content-center">
             <div class="col-md-10">
                 <h2 class="text-center mt-5">StableDiffusion画像作成</h2>
-                <form id="myForm" action="/run_program" method="post">
+                <form id="myForm" action="/run_program" method="post" onsubmit="submitForm(event)">
                     <div class="form-group">
                         <label for="sd_url">SD 送信先URL sd_url:</label>
                         <input type="text" id="sd_url" name="sd_url" value="http://<stableDiffusionIPアドレス>:7860" class="form-control" required>
