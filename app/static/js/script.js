@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeParameters(); // フィールドとローカルストレージの初期化
     initializeDisplay(); // 画面表示の初期化
     initializeEventListeners(); // イベントリスナーの初期化
-    setupFormSubmission(); // フォーム送信処理の初期化
     startTaskFetching(); // タスク取得処理の定期実行
 });
 
@@ -83,49 +82,6 @@ function initializeEventListeners() {
         document.getElementById(listener.id).addEventListener('change', function(event) {
             handleChange(event, listener.targetId, listener.condition);
         });
-    });
-}
-
-// フォーム送信処理
-function setupFormSubmission() {
-    document.getElementById('myForm').addEventListener('submit', async function (event) {
-        event.preventDefault(); // フォームのデフォルト送信を抑制
-
-        try {
-            const csrfToken = await updateCSRFToken();
-
-            // フォームデータを取得
-            const formData = new FormData(this);
-
-            // XMLHttpRequestを使用してリクエストを送信
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', this.action, true);
-
-            // 必要なヘッダーを追加
-            xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
-
-            // レスポンスの処理
-            xhr.onload = function () {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    console.log('送信成功:', xhr.responseText);
-                    window.location.href = xhr.responseURL;
-                } else {
-                    console.error('送信失敗:', xhr.statusText);
-                    window.location.href = xhr.responseURL;
-                }
-            };
-
-            xhr.onerror = function () {
-                console.error('通信エラーが発生しました');
-                alert('通信中にエラーが発生しました。');
-            };
-
-            // フォームデータを送信
-            xhr.send(formData);
-        } catch (error) {
-            console.error('エラーが発生しました:', error);
-            alert('予期しないエラーが発生しました。');
-        }
     });
 }
 
@@ -480,6 +436,22 @@ async function submitCancelForm() {
     if (!confirmCancel()) return; // キャンセル確認ダイアログ
 
     const form = document.getElementById('cancelForm');
+    try {
+        const csrfToken = await updateCSRFToken(); // CSRFトークンを取得
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput); // 動的にトークンを追加
+        form.submit(); // フォーム送信
+    } catch (error) {
+        alert('フォーム送信エラー: CSRFトークンの更新に失敗しました。');
+    }
+}
+
+async function submitForm() {
+
+    const form = document.getElementById('myForm');
     try {
         const csrfToken = await updateCSRFToken(); // CSRFトークンを取得
         const csrfInput = document.createElement('input');
