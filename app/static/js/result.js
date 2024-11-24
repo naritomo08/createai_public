@@ -182,7 +182,8 @@ async function fetchMetadata(filename) {
     .catch(error => alert("メタデータの取得中にエラーが発生しました: " + error));
 }
 
-async function submitCancelForm() {
+async function submitCancelForm(event) {
+    event.preventDefault();
     if (!confirmCancel()) return; // キャンセル確認ダイアログ
 
     const form = document.getElementById('cancelForm');
