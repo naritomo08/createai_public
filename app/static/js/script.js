@@ -470,3 +470,20 @@ async function fetchMetadata(filename) {
     })
     .catch(error => alert("メタデータの取得中にエラーが発生しました: " + error));
 }
+
+async function submitCancelForm() {
+    if (!confirmCancel()) return; // キャンセル確認ダイアログ
+
+    const form = document.getElementById('cancelForm');
+    try {
+        const csrfToken = await updateCSRFToken(); // CSRFトークンを取得
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput); // 動的にトークンを追加
+        form.submit(); // フォーム送信
+    } catch (error) {
+        alert('フォーム送信エラー: CSRFトークンの更新に失敗しました。');
+    }
+}
