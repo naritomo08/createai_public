@@ -89,14 +89,42 @@ function initializeEventListeners() {
 // フォーム送信処理
 function setupFormSubmission() {
     document.getElementById('myForm').addEventListener('submit', async function (event) {
-        event.preventDefault();
+        event.preventDefault(); // フォームのデフォルト送信を抑制
 
         try {
-            await updateCSRFToken(); // CSRFトークンの更新
-            this.submit(); // フォーム送信
+            const csrfToken = await updateCSRFToken();
+
+            // フォームデータを取得
+            const formData = new FormData(this);
+
+            // XMLHttpRequestを使用してリクエストを送信
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', this.action, true);
+
+            // 必要なヘッダーを追加
+            xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+
+            // レスポンスの処理
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    console.log('送信成功:', xhr.responseText);
+                    window.location.href = xhr.responseURL;
+                } else {
+                    console.error('送信失敗:', xhr.statusText);
+                    window.location.href = xhr.responseURL;
+                }
+            };
+
+            xhr.onerror = function () {
+                console.error('通信エラーが発生しました');
+                alert('通信中にエラーが発生しました。');
+            };
+
+            // フォームデータを送信
+            xhr.send(formData);
         } catch (error) {
-            console.error('CSRFトークン更新中にエラー:', error);
-            alert('エラーが発生しました。後でもう一度試してください。');
+            console.error('エラーが発生しました:', error);
+            alert('予期しないエラーが発生しました。');
         }
     });
 }
@@ -281,10 +309,6 @@ async function updateCSRFToken() {
         if (!response.ok) throw new Error('CSRFトークン取得失敗');
         const data = await response.json();
         const csrfToken = data.csrf_token;
-
-        document.querySelectorAll('input[name="csrf_token"]').forEach(input => {
-            input.value = csrfToken;
-        });
         return csrfToken;
     } catch (error) {
         console.error('CSRFトークンの更新失敗:', error);
