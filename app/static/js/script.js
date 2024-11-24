@@ -248,7 +248,8 @@ async function confirmDeleteTasks() {
 }
 
 // CSRFトークン更新関数
-async function updateCSRFToken() {
+async function updateCSRFToken(event) {
+    event.preventDefault();
     try {
         const response = await fetch('/get_csrf_token');
         if (!response.ok) throw new Error('CSRFトークン取得失敗');

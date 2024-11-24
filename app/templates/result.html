@@ -36,7 +36,7 @@
             <div class="mt-3">
                 <form id="cancelForm" method="post" action="/cancel_task">
                     <input type="hidden" name="task_id" value="{{ task_id }}">
-                    <button type="button" onclick="submitCancelForm()" class="btn btn-danger">タスクを削除</button>
+                    <button type="button" onclick="submitCancelForm(event)" class="btn btn-danger">タスクを削除</button>
                 </form>
             </div>
         </div>

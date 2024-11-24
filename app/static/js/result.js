@@ -366,7 +366,8 @@ async function updateCSRFToken() {
     }
 }
 
-async function submitForm() {
+async function submitForm(event) {
+    event.preventDefault();
 
     const form = document.getElementById('myForm');
     try {
