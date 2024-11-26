@@ -9,4 +9,3 @@ pillow
 flask-wtf
 gunicorn
 pytest
-pytest-mock
