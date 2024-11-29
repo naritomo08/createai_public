@@ -1,10 +1,17 @@
-FROM python:3.8-slim
+# ベースイメージ
+FROM python:3.9-slim
 
+# 作業ディレクトリを設定
 WORKDIR /app
 
-COPY requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+# 必要なファイルをコピー
+COPY . /app
 
-COPY . .
+# 依存ライブラリをインストール
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["bash", "start_log_writer.sh"]
+# ログディレクトリを作成
+RUN mkdir -p /app/output/log
+
+# スクリプトを実行
+CMD ["python", "write_logs_to_file.py"]
