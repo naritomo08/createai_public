@@ -23,9 +23,9 @@ def cleanup_old_logs(log_dir, days_to_keep=7):
     """指定された日数より古い task_log.log.yyyymmdd 形式のログファイルを削除"""
     cutoff_date = datetime.now() - timedelta(days=days_to_keep)
     for file_name in os.listdir(log_dir):
-        if file_name.startswith("task_log.log.") and file_name.endswith(".log"):
+        if file_name.startswith("task_log.log."):
             # ファイル名から日付部分を抽出
-            date_part = file_name.replace("task_log.log.", "").replace(".log", "")
+            date_part = file_name.replace("task_log.log.", "")
             try:
                 file_date = datetime.strptime(date_part, "%Y%m%d")
                 if file_date < cutoff_date:
