@@ -52,7 +52,7 @@ def setup_logger(log_file):
         backupCount=0  # 自動削除は行わず、手動で管理
     )
     handler.suffix = "%Y%m%d"  # ローテーション後のファイル名形式
-    handler.namer = lambda name: name.replace(".log", "").replace("task_log", "task_log-") + ".log"  # ファイル名形式を統一
+    handler.namer = lambda name: name.replace("task_log.log", "task_log-%Y%m%d.log")
 
     formatter = logging.Formatter('%(asctime)s - %(message)s')
     handler.setFormatter(formatter)
