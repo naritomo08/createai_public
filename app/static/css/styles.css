@@ -16,3 +16,34 @@
     max-height: 70vh; /* 画像の高さを画面の70%に制限 */
     object-fit: contain; /* 画像をモーダル内に収めるためにアスペクト比を保ちながら収める */
 }
+
+body.light-mode {
+    background-color: #fff;
+    color: #222;
+}
+body.dark-mode {
+    background-color: #181a1b;
+    color: #eee;
+}
+body.dark-mode .form-control,
+body.dark-mode .form-group,
+body.dark-mode .table,
+body.dark-mode .modal-content {
+    background-color: #23272b !important;
+    color: #eee !important;
+    border-color: #444 !important;
+}
+body.light-mode .form-control,
+body.light-mode .form-group,
+body.light-mode .table,
+body.light-mode .modal-content {
+    background-color: #fff !important;
+    color: #222 !important;
+    border-color: #ccc !important;
+}
+
+body.dark-mode .bg-light {
+    background-color: #23272b !important;
+    color: #eee !important;
+    border-color: #444 !important;
+}
