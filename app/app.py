@@ -30,6 +30,58 @@ def log_to_redis(log_message):
     }
     redis_client.rpush('logs', json.dumps(log_entry))
 
+# === Untracked image purge helpers (ADD) =====================================
+def _all_tracked_image_fullpaths() -> set:
+    """
+    Redisの task_result:*:image_filepaths に載っている全画像の“絶対パス”集合を返す
+    """
+    tracked = set()
+    try:
+        cursor = 0
+        while True:
+            cursor, keys = redis_client.scan(cursor=cursor, match='task_result:*:image_filepaths', count=1000)
+            for key in keys:
+                files = redis_client.lrange(key, 0, -1)
+                for f in files:
+                    try:
+                        p = f.decode('utf-8')
+                    except Exception:
+                        p = str(f)
+                    tracked.add(os.path.abspath(p))
+            if cursor == 0:
+                break
+    except Exception as e:
+        log_to_redis(f"scan image_filepaths failed: {e}")
+    return tracked
+
+def purge_untracked_images():
+    """
+    static/output/png と static/output/jpg を走査し、
+    Redisに登録されていない *.png / *.jpg を無条件で削除する
+    """
+    png_dir = os.path.join(app.static_folder, 'output', 'png')
+    jpg_dir = os.path.join(app.static_folder, 'output', 'jpg')
+    tracked = _all_tracked_image_fullpaths()
+
+    for dir_path, exts in [(png_dir, ('.png',)), (jpg_dir, ('.jpg',))]:
+        if not os.path.isdir(dir_path):
+            continue
+        try:
+            for name in os.listdir(dir_path):
+                if not name.lower().endswith(exts):
+                    continue
+                full = os.path.abspath(os.path.join(dir_path, name))
+                if full not in tracked:
+                    try:
+                        if os.path.isfile(full) and not os.path.islink(full):
+                            os.remove(full)
+                            print(f"Deleted UNTRACKED file: {full}")
+                    except Exception as e:
+                        log_to_redis(f"Failed to delete untracked file {full}: {e}")
+        except Exception as e:
+            log_to_redis(f"purge_untracked_images failed on {dir_path}: {e}")
+# =============================================================================
+
 # FlaskとCeleryの設定
 app.config['broker_url'] = 'redis://redis:6379/0'
 app.config['result_backend'] = 'redis://redis:6379/0'
@@ -351,6 +403,10 @@ def delete_expired_tasks():
                     log_to_redis(f"Task {task_id} has no end time, will not delete.")
             except Exception as task_error:
                 log_to_redis(f"An error occurred while processing task {task_id}: {task_error}")
+
+        # ★追加：フォルダ全体から「Redis未登録の画像」を一掃
+        purge_untracked_images()
+    
     except Exception as e:
         log_to_redis(f"An error occurred in delete_expired_tasks task: {e}")
 
