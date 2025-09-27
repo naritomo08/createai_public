@@ -32,39 +32,95 @@ def log_to_redis(log_message):
     redis_client.rpush('logs', json.dumps(log_entry))
 
 # === Untracked image purge helpers (ADD) =====================================
-def _all_tracked_image_fullpaths() -> set:
+def _safe_decode(b) -> str:
+    try:
+        return b.decode('utf-8')
+    except Exception:
+        return str(b)
+
+def _all_tracked_artifact_fullpaths() -> set:
     """
-    Redisの task_result:*:image_filepaths に載っている全画像の“絶対パス”集合を返す
+    Redis に登録済みの “画像/ZIP” の絶対パス集合を返す
+    対象:
+      - task_result:*:image_filepaths に載っている全画像
+      - (あれば) task_result:*:zip_filepaths に載っている全ZIP
+      - image_filepaths のキーから task_id を抽出し、存在し得る ZIP の“期待パス”を加える
+        期待パス規約:
+          {png_dir}/{task_id}_png_images.zip
+          {jpg_dir}/{task_id}_jpg_images.zip
     """
     tracked = set()
     try:
+        # 1) 画像ファイル (既存)
         cursor = 0
         while True:
             cursor, keys = redis_client.scan(cursor=cursor, match='task_result:*:image_filepaths', count=1000)
             for key in keys:
+                key_s = _safe_decode(key)
+                parts = key_s.split(':', 2)  # ["task_result", "{task_id}", "image_filepaths"]
+                task_id = parts[1] if len(parts) >= 3 else None
+
                 files = redis_client.lrange(key, 0, -1)
+                has_png = False
+                has_jpg = False
+                png_dir = None
+                jpg_dir = None
+
                 for f in files:
-                    try:
-                        p = f.decode('utf-8')
-                    except Exception:
-                        p = str(f)
-                    tracked.add(os.path.abspath(p))
+                    p = os.path.abspath(_safe_decode(f))
+                    tracked.add(p)
+                    # ディレクトリ推定（ZIP期待パス生成に利用）
+                    # 画像が /png/ または /jpg/ を含む想定（あなたの既存ロジックに合わせる）
+                    if '/png/' in p.lower():
+                        has_png = True
+                        png_dir = os.path.dirname(p)
+                    if '/jpg/' in p.lower():
+                        has_jpg = True
+                        jpg_dir = os.path.dirname(p)
+
+                # 期待 ZIP パスを tracked に加える
+                if task_id:
+                    if has_png and png_dir:
+                        tracked.add(os.path.abspath(os.path.join(png_dir, f"{task_id}_png_images.zip")))
+                    if has_jpg and jpg_dir:
+                        tracked.add(os.path.abspath(os.path.join(jpg_dir, f"{task_id}_jpg_images.zip")))
+
             if cursor == 0:
                 break
+
+        # 2) (オプション) ZIP を明示保存している場合も取り込む
+        cursor = 0
+        while True:
+            cursor, keys = redis_client.scan(cursor=cursor, match='task_result:*:zip_filepaths', count=1000)
+            for key in keys:
+                files = redis_client.lrange(key, 0, -1)
+                for f in files:
+                    p = os.path.abspath(_safe_decode(f))
+                    tracked.add(p)
+            if cursor == 0:
+                break
+
     except Exception as e:
-        log_to_redis(f"scan image_filepaths failed: {e}")
+        log_to_redis(f"scan artifacts failed: {e}")
     return tracked
 
-def purge_untracked_images():
+def purge_untracked_artifacts():
     """
     static/output/png と static/output/jpg を走査し、
-    Redisに登録されていない *.png / *.jpg を無条件で削除する
+    Redisに登録されていない *.png / *.jpg / *.zip を削除する
+    （ZIPは {task_id}_png_images.zip / {task_id}_jpg_images.zip 想定）
     """
-    png_dir = os.path.join(app.static_folder, 'output', 'png')
-    jpg_dir = os.path.join(app.static_folder, 'output', 'jpg')
-    tracked = _all_tracked_image_fullpaths()
+    base_png = os.path.join(app.static_folder, 'output', 'png')
+    base_jpg = os.path.join(app.static_folder, 'output', 'jpg')
+    tracked = _all_tracked_artifact_fullpaths()
 
-    for dir_path, exts in [(png_dir, ('.png',)), (jpg_dir, ('.jpg',))]:
+    # 拡張子セットに zip を追加
+    targets = [
+        (base_png, ('.png', '.zip')),
+        (base_jpg, ('.jpg', '.zip')),
+    ]
+
+    for dir_path, exts in targets:
         if not os.path.isdir(dir_path):
             continue
         try:
@@ -76,11 +132,11 @@ def purge_untracked_images():
                     try:
                         if os.path.isfile(full) and not os.path.islink(full):
                             os.remove(full)
-                            print(f"Deleted UNTRACKED file: {full}")
+                            print(f"Deleted UNTRACKED artifact: {full}")
                     except Exception as e:
-                        log_to_redis(f"Failed to delete untracked file {full}: {e}")
+                        log_to_redis(f"Failed to delete untracked artifact {full}: {e}")
         except Exception as e:
-            log_to_redis(f"purge_untracked_images failed on {dir_path}: {e}")
+            log_to_redis(f"purge_untracked_artifacts failed on {dir_path}: {e}")
 # =============================================================================
 
 # FlaskとCeleryの設定
@@ -422,7 +478,7 @@ def delete_expired_tasks():
             except Exception as task_error:
                 log_to_redis(f"An error occurred while processing task {task_id}: {task_error}")
         # ★追加：フォルダ全体から「Redis未登録の画像」を一掃
-        purge_untracked_images()
+        purge_untracked_artifacts()
 
     except Exception as e:
         log_to_redis(f"An error occurred in delete_expired_tasks task: {e}")
