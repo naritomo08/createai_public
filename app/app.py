@@ -154,12 +154,12 @@ RESULT_EXPIRATION_TIME = 86400
 
 def update_variable(content, variable, value):
     if isinstance(value, str):
-        value = f'"{value}"'  # 文字列の場合はダブルコーテーションで囲む
+        value = json.dumps(value)  # Pythonソースに安全な文字列リテラルへ変換
     else:
         value = str(value)  # それ以外の場合はそのまま文字列に変換
     pattern = rf'{variable}\s*=\s*.*'
     replacement = f'{variable} = {value}'
-    return re.sub(pattern, replacement, content)
+    return re.sub(pattern, lambda _: replacement, content)
 
 def convert_to_jst(timestamp):
     utc_dt = datetime.fromtimestamp(timestamp, tz=pytz.utc)
